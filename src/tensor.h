@@ -115,118 +115,19 @@ bool compatibleDimensions(Tensor& t1, Tensor& t2);
 
 void transpose(Tensor& source, Tensor& dest, TensorError* error=&globalError);
 
-/*
-  int numDimensions;
-  int* dimensions;
-  int* coords;
-  bool ended;
-
-  broadcastIterator(Tensor& t1, Tensor& t2) {
-    numDimensions = MAX(t1.numDimensions, t2.numDimensions);
-    dimensions = new int[numDimensions];
-    coords = new int[numDimensions];
-    ended = false;
-
-    int coordIndex1 = 0;
-    int coordIndexIncrement1 = 1;
-    if(!t1.dimensionInReversedOrder) {
-      coordIndexIncrement1 = -1;
-      coordIndex1 = t1.numDimensions - 1;
-    }
-
-    int coordIndex2= 0;
-    int coordIndexIncrement2 = 1;
-    if(!t2.dimensionInReversedOrder) {
-      coordIndexIncrement2 = -1;
-      coordIndex2 = t2.numDimensions - 1;
-    }
-
-    for(int i=0; i<numDimensions; i++) {
-      dimensions[i] = MAX(t1.dimensions[coordIndex1], t2.dimensions[coordIndex2]);
-      coordIndex1 += coordIndexIncrement1;
-      coordIndex2 += coordIndexIncrement2;
-      coords[i] = 0.0;
-    }
-  }
-
-  broadcastIterator(Tensor& t) {
-    numDimensions = t.numDimensions;
-    dimensions = new int[numDimensions];
-    coords = new int[numDimensions];
-    ended = false;
-
-    int coordIndex = 0;
-    int coordIndexIncrement = 1;
-    if(!t.dimensionInReversedOrder) {
-      coordIndexIncrement = -1;
-      coordIndex = t.numDimensions - 1;
-    }
-
-    for(int i=0; i<numDimensions; i++) {
-      dimensions[i] = t.dimensions[coordIndex];
-      coordIndex += coordIndexIncrement;
-      coords[i] = 0.0;
-    }
-  }
-
-  broadcastIterator(Tensor& t, int dimensionsToKeep) {
-    numDimensions = MAX(dimensionsToKeep, -dimensionsToKeep);
-
-    dimensions = new int[numDimensions];
-    coords = new int[numDimensions];
-    ended = false;
-
-    int coordIndex = 0;
-    int coordIndexIncrement = 1;
-    if(!t.dimensionInReversedOrder) {
-      coordIndexIncrement = -1;
-      coordIndex = t.numDimensions - 1;
-    }
-
-    if(dimensionsToKeep < 0) {
-      coordIndex += (t.numDimensions - numDimensions) * coordIndexIncrement;
-    }
-
-    for(int i=0; i<numDimensions; i++) {
-      dimensions[i] = t.dimensions[coordIndex];
-      coordIndex += coordIndexIncrement;
-      coords[i] = 0.0;
-    }
-  }
-
-  void reset(void) {
-    ended = false;
-    for(int i=0; i<numDimensions; i++) {
-      coords[i] = 0.0;
-    }
-  }
-
-  ~broadcastIterator() {
-    delete [] dimensions;
-    delete [] coords;
-  }
-
-  void next(void);
-};
-*/
 void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error);
 
-int multiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest);
+void multiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error);
 
-int divideScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest);
+void divideScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error);
 
-int add(Tensor& source1, Tensor& source2, Tensor& dest);
+void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
 
-int subtract(Tensor& source1, Tensor& source2, Tensor& dest);
+void subtract(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
 
-int multiply(Tensor& source1, Tensor& source2, Tensor& dest);
+void multiply(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
 
-int divide(Tensor& source1, Tensor& source2, Tensor& dest);
-
-int matMul(Tensor& source1, Tensor& source2, int sumDims, Tensor& dest);
-
-int scalarProduct(Tensor& source1, Tensor& source2, double& product);
-
+void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
 
 
 } //namespace tensor
