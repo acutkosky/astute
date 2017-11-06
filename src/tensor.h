@@ -1,5 +1,9 @@
+#pragma once
+#include <iostream>
+using std::cout;
+using std::endl;
 
-
+namespace tensor {
 
 #define ASSERT(expr, error) if(!(expr)) { return error; }
 #define ASSERT_SIZE_EQUAL_3(a, b, c)  ASSERT(a.totalSize() == b.totalSize() && a.totalSize() == c.totalSize(), SizeMismatchError)
@@ -7,12 +11,16 @@
 #define MAX(a,b) (a>b?a:b)
 
 
-enum TensorErrors {
+enum TensorError {
   NoError = 0,
-  SizeMismatchError = 1,
-  DimensionMismatchError = 2
+  SizeMismatchError,
+  DimensionMismatchError,
+  IndexOutOfBounds,
+  MemoryLeakError
 };
 
+
+extern TensorError globalError;
 
 /**
   * dimensionsInReversedOrder is a flag that (when true) indicates that
@@ -32,20 +40,82 @@ struct Tensor {
   double* data;
   int numDimensions;
   int* dimensions;
-  bool dimensionInReversedOrder;
+  int* strides;
+  int initial_offset;
 
   int totalSize(void);
 
-  double& at(int* coords);
+  double& at(const int* coords, TensorError* error=&globalError);
 
-  double& at(int* prefixCoords, int* suffixCoords, int suffixSize);
+  // double& at(const int* prefixCoords, int* suffixCoords, int suffixSize);
 
-  double& broadcast_at(int* coords);
+  double& broadcast_at(const int* coords, TensorError* error=&globalError);
 
-  void transpose_(void);
+  void setStrides(bool dimensionsInReversedOrder);
 };
 
-struct broadcastIterator {
+struct TensorIterator {
+  Tensor* T;
+  double* iterator;
+  int* currentCoords;
+  bool ended;
+
+  TensorIterator(Tensor& t) {
+    T = &t;
+    currentCoords = new int[T->numDimensions];
+    ended = false;
+    for(int i=0; i<T->numDimensions; i++) {
+      currentCoords[i] = 0;
+    }
+    iterator = &T->at(currentCoords);
+  }
+
+  ~TensorIterator() {
+    delete [] currentCoords;
+  }
+
+  bool next(void);
+
+  double& get(void);
+};
+
+struct MultiIndexIterator {
+  int* dimensions;
+  int numDimensions;
+  int* currentCoords;
+  bool ended;
+
+  MultiIndexIterator(int* _dimensions, int _numDimensions) {
+    dimensions = _dimensions;
+    numDimensions = _numDimensions;
+    currentCoords = new int[numDimensions];
+    ended = false;
+    for(int i=0; i<numDimensions; i++) {
+      currentCoords[i] = 0;
+    }
+  }
+
+  ~MultiIndexIterator() {
+    delete [] currentCoords;
+  }
+
+  bool next(void);
+  int* get(void);
+};
+
+void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract, TensorError* error=&globalError);
+
+double scalarProduct(Tensor& t1, Tensor& t2, TensorError* error);
+
+void subTensor(Tensor& source, int* heldCoords, int* heldValues, int numHeld, Tensor& dest, TensorError* error=&globalError);
+
+bool matchedDimensions(Tensor& t1, Tensor& t2);
+
+bool compatibleDimensions(Tensor& t1, Tensor& t2);
+
+void transpose(Tensor& source, Tensor& dest, TensorError* error=&globalError);
+
+/*
   int numDimensions;
   int* dimensions;
   int* coords;
@@ -138,7 +208,7 @@ struct broadcastIterator {
 
   void next(void);
 };
-
+*/
 int addScale(Tensor& source1, Tensor& source2, double scale1, double scale2, Tensor& dest);
 
 int multiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest);
@@ -157,3 +227,6 @@ int matMul(Tensor& source1, Tensor& source2, int sumDims, Tensor& dest);
 
 int scalarProduct(Tensor& source1, Tensor& source2, double& product);
 
+
+
+} //namespace tensor
