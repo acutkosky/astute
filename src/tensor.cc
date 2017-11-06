@@ -20,7 +20,7 @@ int Tensor::totalSize(void) {
 }
 
 
-double& Tensor::at(const int* coords, TensorError* error) {
+double& Tensor::at(int* coords, TensorError* error) {
   int offset = this->initial_offset;
   for(int i=0; i<this->numDimensions; i++) {
     if(coords[i] < 0 || coords[i] >= this->dimensions[i]) {
@@ -32,16 +32,19 @@ double& Tensor::at(const int* coords, TensorError* error) {
   return this->data[offset];
 }
 
-double& Tensor::broadcast_at(const int* coords, TensorError* error) {
+double& Tensor::broadcast_at(int* coords, int numCoords, TensorError* error) {
   int offset = this->initial_offset;
   for(int i=0; i<this->numDimensions; i++) {
-    if(coords[i] < 0) {
+    int dimension = this->dimensions[this->numDimensions - i - 1];
+    int stride = this->strides[this->numDimensions - i - 1];
+    int coord = coords[numCoords -i -1];
+    if(coord < 0) {
       *error = IndexOutOfBounds;
       return this->data[offset];
     }
-    if(coords[i] < this->dimensions[i]) {
-      offset += coords[i] * this->strides[i];
-    } else if(this->dimensions[i] != 1) {
+    if(coord < dimension) {
+      offset += coord * stride;
+    } else if(dimension != 1) {
       *error = IndexOutOfBounds;
       return this->data[offset];
     }
@@ -116,11 +119,11 @@ bool compatibleDimensions(Tensor& t1, Tensor& t2) {
   int minimumDim = MIN(t1.numDimensions, t2.numDimensions);
 
   for(int i=0; i<minimumDim; i++) {
-    if(t1.dimensions[t1.numDimensions-i] == 1)
+    if(t1.dimensions[t1.numDimensions-1-i] == 1)
       continue;
-    if(t2.dimensions[t2.numDimensions-i] == 1)
+    if(t2.dimensions[t2.numDimensions-1-i] == 1)
       continue;
-    if(t1.dimensions[t1.numDimensions-i] == t2.dimensions[t2.numDimensions-i])
+    if(t1.dimensions[t1.numDimensions-1-i] == t2.dimensions[t2.numDimensions-1-i])
       continue;
 
     return false;
@@ -271,8 +274,7 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract
     return;
   }
 
-  int* dimensions = dest.dimensions;
-  MultiIndexIterator destIterator(dimensions, dest.numDimensions);
+  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
 
   int* dimRange = new int[dest.numDimensions];
   for(int i=0; i<dest.numDimensions; i++) {
@@ -319,6 +321,47 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract
   delete [] sub2.strides;
 }
 
+bool isBroadcastDimension(Tensor& source1, Tensor& source2, Tensor& dest) {
+  int maxDimensions = MAX(source1.numDimensions, source2.numDimensions);
+  if(dest.numDimensions != maxDimensions)
+    return false;
+
+  int dimension1, dimension2;
+
+  for(int i=0; i<maxDimensions; i++) {
+    dimension1 = dimension2 = 1;
+    if(i<source1.numDimensions)
+      dimension1 = source1.dimensions[source1.numDimensions - i -1];
+
+    if(i<source2.numDimensions)
+      dimension2= source2.dimensions[source2.numDimensions - i -1];
+
+    if(dest.dimensions[maxDimensions - i -1] != MAX(dimension1, dimension2))
+      return false;
+  }
+  return true;
+}
+
+void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error) {
+  if(!compatibleDimensions(source1, source2)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+  if(!isBroadcastDimension(source1, source2, dest)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+
+  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  int numDim = dest.numDimensions;
+  do {
+    int* currentCoords = destIterator.get();
+    dest.at(currentCoords) = 
+      scale1 * source1.broadcast_at(currentCoords, numDim) +
+      scale2 * source2.broadcast_at(currentCoords, numDim);
+  } while(destIterator.next());
+
+}
 
 } //namespace tensor
 

@@ -45,11 +45,11 @@ struct Tensor {
 
   int totalSize(void);
 
-  double& at(const int* coords, TensorError* error=&globalError);
+  double& at(int* coords, TensorError* error=&globalError);
 
-  // double& at(const int* prefixCoords, int* suffixCoords, int suffixSize);
+  // double& at(int* prefixCoords, int* suffixCoords, int suffixSize);
 
-  double& broadcast_at(const int* coords, TensorError* error=&globalError);
+  double& broadcast_at(int* coords, int numCoords, TensorError* error=&globalError);
 
   void setStrides(bool dimensionsInReversedOrder);
 };
@@ -209,7 +209,7 @@ void transpose(Tensor& source, Tensor& dest, TensorError* error=&globalError);
   void next(void);
 };
 */
-int addScale(Tensor& source1, Tensor& source2, double scale1, double scale2, Tensor& dest);
+void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error);
 
 int multiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest);
 
