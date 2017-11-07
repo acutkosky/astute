@@ -129,5 +129,8 @@ void multiply(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error
 
 void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
 
+void scale(Tensor& source, Tensor& dets, double scale);
+
+void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
 
 } //namespace tensor

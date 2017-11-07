@@ -252,7 +252,7 @@ bool compatibleForContraction(Tensor& source1, Tensor& source2, int dimsToContra
 
 
   for(int i=0; i<dimsToContract; i++) {
-    int source1Offset = source1.numDimensions-dimsToContract - 1 - i;
+    int source1Offset = source1.numDimensions - 1 - i;
     int source2Offset = i;
     if(source1.dimensions[source1Offset] != source2.dimensions[source2Offset]) 
       return false;
@@ -285,10 +285,12 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract
   sub1.dimensions = new int[dimsToContract];
   sub1.strides = new int[dimsToContract];
   sub1.numDimensions = dimsToContract;
+  sub1.data = NULL;
 
   sub2.dimensions = new int[dimsToContract];
   sub2.strides = new int[dimsToContract];
   sub2.numDimensions = dimsToContract;
+  sub2.data = NULL;
 
   do {
     int* currentCoords = destIterator.get();
@@ -298,6 +300,7 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract
               source1.numDimensions - dimsToContract,
               sub1,
               error);
+    transpose(sub1, sub1, error);
     subTensor(source2, 
               dimRange + source1.numDimensions - dimsToContract,
               currentCoords + source1.numDimensions - dimsToContract,
@@ -423,6 +426,24 @@ void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) 
   return divideScale(source1, source2, dest, 1, error);
 }
 
+void scale(Tensor& source, Tensor& dest, double scale, TensorError* error) {
+  if(!matchedDimensions(source, dest)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+
+  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  int numDim = dest.numDimensions;
+  do {
+    int* currentCoords = destIterator.get();
+    dest.at(currentCoords) = 
+      scale * source.at(currentCoords);
+  } while(destIterator.next());
+}
+
+void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+  return contract(source1, source2, dest, 1, error);
+}
 
 } //namespace tensor
 
