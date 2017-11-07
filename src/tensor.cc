@@ -19,6 +19,19 @@ uint32_t Tensor::totalSize(void) {
   return accumulator;
 }
 
+uint32_t Tensor::maximumOffset(void) {
+  if(this->numDimensions == 0) {
+    return this->initial_offset;
+  }
+  uint32_t offset = this->initial_offset;
+
+  for(uint32_t i=0; i<this->numDimensions; i++) {
+    offset += this->dimensions[i]*this->strides[i];
+  }
+
+  return offset;
+}
+
 bool Tensor::isValid(void) {
   return this->data != NULL;
 }

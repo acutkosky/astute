@@ -9,7 +9,6 @@
     return; \
   } \
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions); \
-  uint32_t numDim = dest.numDimensions; \
   do { \
     uint32_t* currentCoords = destIterator.get(); \
     dest.at(currentCoords) = \
@@ -26,7 +25,6 @@ void apply(double(*func)(double), Tensor& source, Tensor& dest, TensorError* err
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  uint32_t numDim = dest.numDimensions;
   do {
     uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
@@ -41,7 +39,6 @@ void pow(Tensor& source, double exponent, Tensor& dest, TensorError* error) {
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  uint32_t numDim = dest.numDimensions;
   do {
     uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 

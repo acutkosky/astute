@@ -46,6 +46,8 @@ struct Tensor {
 
   uint32_t totalSize(void);
 
+  uint32_t maximumOffset(void);
+
   double& at(uint32_t* coords, TensorError* error=&globalError);
 
   // double& at(uint32_t* prefixCoords, uint32_t* suffixCoords, uint32_t suffixSize);
