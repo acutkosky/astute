@@ -8,22 +8,25 @@ TensorError globalError;
 using std::cout;
 using std::endl;
 
-int Tensor::totalSize(void) {
+uint32_t Tensor::totalSize(void) {
   if(this->numDimensions == 0) {
     return 0;
   }
-  int accumulator = 1;
-  for(int i=0; i<this->numDimensions; i++) {
+  uint32_t accumulator = 1;
+  for(uint32_t i=0; i<this->numDimensions; i++) {
     accumulator *= this->dimensions[i];
   }
   return accumulator;
 }
 
+bool Tensor::isValid(void) {
+  return this->data != NULL;
+}
 
-double& Tensor::at(int* coords, TensorError* error) {
-  int offset = this->initial_offset;
-  for(int i=0; i<this->numDimensions; i++) {
-    if(coords[i] < 0 || coords[i] >= this->dimensions[i]) {
+double& Tensor::at(uint32_t* coords, TensorError* error) {
+  uint32_t offset = this->initial_offset;
+  for(uint32_t i=0; i<this->numDimensions; i++) {
+    if(coords[i] >= this->dimensions[i]) {
       *error = IndexOutOfBounds;
       return this->data[offset];
     }
@@ -32,16 +35,12 @@ double& Tensor::at(int* coords, TensorError* error) {
   return this->data[offset];
 }
 
-double& Tensor::broadcast_at(int* coords, int numCoords, TensorError* error) {
-  int offset = this->initial_offset;
-  for(int i=0; i<this->numDimensions; i++) {
-    int dimension = this->dimensions[this->numDimensions - i - 1];
-    int stride = this->strides[this->numDimensions - i - 1];
-    int coord = coords[numCoords -i -1];
-    if(coord < 0) {
-      *error = IndexOutOfBounds;
-      return this->data[offset];
-    }
+double& Tensor::broadcast_at(uint32_t* coords, uint32_t numCoords, TensorError* error) {
+  uint32_t offset = this->initial_offset;
+  for(uint32_t i=0; i<this->numDimensions; i++) {
+    uint32_t dimension = this->dimensions[this->numDimensions - i - 1];
+    uint32_t stride = this->strides[this->numDimensions - i - 1];
+    uint32_t coord = coords[numCoords -i -1];
     if(coord < dimension) {
       offset += coord * stride;
     } else if(dimension != 1) {
@@ -53,7 +52,7 @@ double& Tensor::broadcast_at(int* coords, int numCoords, TensorError* error) {
 }
 
 /**
-  * sets the strides pointer in the tensor object.
+  * sets the strides pouint32_ter in the tensor object.
   * dimensionsInReversedOrder specifies whether the tensor is 
   * stored in "column major" or "row major" order. Specifically, if
   * dimensionsInReversedOrder is true, the ijk th element of a NxMxK tensor
@@ -72,13 +71,13 @@ double& Tensor::broadcast_at(int* coords, int numCoords, TensorError* error) {
 
 void Tensor::setStrides(bool dimensionsInReversedOrder) {
   if(dimensionsInReversedOrder) {
-    int currentStride = 1;
-    for(int i=0; i<numDimensions; i++) {
+    uint32_t currentStride = 1;
+    for(uint32_t i=0; i<numDimensions; i++) {
       this->strides[i] = currentStride;
       currentStride *= this->dimensions[i];
     }
   } else {
-    int currentStride = 1;
+    uint32_t currentStride = 1;
     for(int i=this->numDimensions-1; i>=0; i--) {
       this->strides[i] = currentStride;
       currentStride *= this->dimensions[i];
@@ -95,7 +94,7 @@ void transpose(Tensor& source, Tensor& dest, TensorError* error) {
     *error = SizeMismatchError;
     return;
   }
-  for(int i=0; i<source.numDimensions; i++) {
+  for(uint32_t i=0; i<source.numDimensions; i++) {
     dest.dimensions[i] = source.dimensions[source.numDimensions-1-i];
     dest.strides[i] = source.strides[source.numDimensions-1-i];
   }
@@ -107,7 +106,7 @@ bool matchedDimensions(Tensor& t1, Tensor& t2) {
   if(t1.numDimensions != t2.numDimensions)
     return false;
 
-  for(int i=0; i<t1.numDimensions; i++) {
+  for(uint32_t i=0; i<t1.numDimensions; i++) {
     if(t1.dimensions[i] != t2.dimensions[i])
       return false;
   }
@@ -116,9 +115,9 @@ bool matchedDimensions(Tensor& t1, Tensor& t2) {
 }
 
 bool compatibleDimensions(Tensor& t1, Tensor& t2) {
-  int minimumDim = MIN(t1.numDimensions, t2.numDimensions);
+  uint32_t minimumDim = MIN(t1.numDimensions, t2.numDimensions);
 
-  for(int i=0; i<minimumDim; i++) {
+  for(uint32_t i=0; i<minimumDim; i++) {
     if(t1.dimensions[t1.numDimensions-1-i] == 1)
       continue;
     if(t2.dimensions[t2.numDimensions-1-i] == 1)
@@ -148,8 +147,8 @@ bool compatibleDimensions(Tensor& t1, Tensor& t2) {
   *
   * We assume heldCoords is sorted.
   **/
-void subTensor(Tensor& source, int* heldCoords, int* heldValues, int numHeld, Tensor& dest, TensorError* error) {
-  if(dest.data!=NULL && dest.data!=source.data) {
+void subTensor(Tensor& source, uint32_t* heldCoords, uint32_t* heldValues, uint32_t numHeld, Tensor& dest, TensorError* error) {
+  if(dest.data!=source.data) {
     *error = MemoryLeakError;
     return;   
   }
@@ -157,10 +156,10 @@ void subTensor(Tensor& source, int* heldCoords, int* heldValues, int numHeld, Te
     *error = DimensionMismatchError;
     return;
   }
-  int heldCoordsIndex = 0;
-  int destDimensionIndex = 0;
-  int offset = source.initial_offset;
-  for(int i=0; i<source.numDimensions; i++) {
+  uint32_t heldCoordsIndex = 0;
+  uint32_t destDimensionIndex = 0;
+  uint32_t offset = source.initial_offset;
+  for(uint32_t i=0; i<source.numDimensions; i++) {
     if(heldCoordsIndex>= numHeld || i!=heldCoords[heldCoordsIndex]) {
       dest.dimensions[destDimensionIndex] = source.dimensions[i];
       dest.strides[destDimensionIndex] = source.strides[i];
@@ -171,12 +170,11 @@ void subTensor(Tensor& source, int* heldCoords, int* heldValues, int numHeld, Te
     }
   }
   dest.initial_offset = offset;
-  dest.data = source.data;
 }
 
 bool TensorIterator::next(void) {
-  int i = 0;
-  int offset = 0;
+  uint32_t i = 0;
+  uint32_t offset = 0;
   currentCoords[i] = (currentCoords[i] + 1) % T->dimensions[i];
 
   offset += T->strides[i];
@@ -202,8 +200,7 @@ double& TensorIterator::get(void) {
 
 
 bool MultiIndexIterator::next(void) {
-  int i = 0;
-  int offset = 0;
+  uint32_t i = 0;
   currentCoords[i] = (currentCoords[i] + 1) % dimensions[i];
   while(currentCoords[i] == 0) {
     i++;
@@ -216,7 +213,7 @@ bool MultiIndexIterator::next(void) {
   return !ended;
 }
 
-int* MultiIndexIterator::get(void) {
+uint32_t* MultiIndexIterator::get(void) {
   return currentCoords;
 }
 
@@ -230,20 +227,18 @@ double scalarProduct(Tensor& t1, Tensor& t2, TensorError* error) {
   TensorIterator iter1(t1);
   TensorIterator iter2(t2);
   double product = 0.0;
-  int i =0;
   do {
-    i++;
     product += iter1.get() * iter2.get();
   } while(iter1.next() && iter2.next());
   return product;
 
 }
 
-void print2DCoord(int* coords) {
+void print2DCoord(uint32_t* coords) {
   cout<<coords[0]<<" "<<coords[1]<<endl;
 }
 
-bool compatibleForContraction(Tensor& source1, Tensor& source2, int dimsToContract) {
+bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToContract) {
 
   if(source1.numDimensions <= dimsToContract)
     return false;
@@ -251,9 +246,9 @@ bool compatibleForContraction(Tensor& source1, Tensor& source2, int dimsToContra
     return false;
 
 
-  for(int i=0; i<dimsToContract; i++) {
-    int source1Offset = source1.numDimensions - 1 - i;
-    int source2Offset = i;
+  for(uint32_t i=0; i<dimsToContract; i++) {
+    uint32_t source1Offset = source1.numDimensions - 1 - i;
+    uint32_t source2Offset = i;
     if(source1.dimensions[source1Offset] != source2.dimensions[source2Offset]) 
       return false;
   }
@@ -261,7 +256,7 @@ bool compatibleForContraction(Tensor& source1, Tensor& source2, int dimsToContra
   return true;
 }
 
-void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract, TensorError* error) {
+void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToContract, TensorError* error) {
 
   if(dest.numDimensions != 
       source1.numDimensions + source2.numDimensions - 2 * dimsToContract) {
@@ -276,24 +271,24 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
 
-  int* dimRange = new int[dest.numDimensions];
-  for(int i=0; i<dest.numDimensions; i++) {
+  uint32_t* dimRange = new uint32_t[dest.numDimensions];
+  for(uint32_t i=0; i<dest.numDimensions; i++) {
     dimRange[i] = i;
   }
   Tensor sub1, sub2;
 
-  sub1.dimensions = new int[dimsToContract];
-  sub1.strides = new int[dimsToContract];
+  sub1.dimensions = new uint32_t[dimsToContract];
+  sub1.strides = new uint32_t[dimsToContract];
   sub1.numDimensions = dimsToContract;
-  sub1.data = NULL;
+  sub1.data = source1.data;
 
-  sub2.dimensions = new int[dimsToContract];
-  sub2.strides = new int[dimsToContract];
+  sub2.dimensions = new uint32_t[dimsToContract];
+  sub2.strides = new uint32_t[dimsToContract];
   sub2.numDimensions = dimsToContract;
-  sub2.data = NULL;
+  sub2.data = source2.data;
 
   do {
-    int* currentCoords = destIterator.get();
+    uint32_t* currentCoords = destIterator.get();
     subTensor(source1, 
               dimRange, 
               currentCoords, 
@@ -325,13 +320,13 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract
 }
 
 bool isBroadcastDimension(Tensor& source1, Tensor& source2, Tensor& dest) {
-  int maxDimensions = MAX(source1.numDimensions, source2.numDimensions);
+  uint32_t maxDimensions = MAX(source1.numDimensions, source2.numDimensions);
   if(dest.numDimensions != maxDimensions)
     return false;
 
-  int dimension1, dimension2;
+  uint32_t dimension1, dimension2;
 
-  for(int i=0; i<maxDimensions; i++) {
+  for(uint32_t i=0; i<maxDimensions; i++) {
     dimension1 = dimension2 = 1;
     if(i<source1.numDimensions)
       dimension1 = source1.dimensions[source1.numDimensions - i -1];
@@ -356,9 +351,9 @@ void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, dou
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  int numDim = dest.numDimensions;
+  uint32_t numDim = dest.numDimensions;
   do {
-    int* currentCoords = destIterator.get();
+    uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
       scale1 * source1.broadcast_at(currentCoords, numDim) +
       scale2 * source2.broadcast_at(currentCoords, numDim);
@@ -377,9 +372,9 @@ void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale,
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  int numDim = dest.numDimensions;
+  uint32_t numDim = dest.numDimensions;
   do {
-    int* currentCoords = destIterator.get();
+    uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
       scale * 
       source1.broadcast_at(currentCoords, numDim) *
@@ -399,9 +394,9 @@ void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, T
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  int numDim = dest.numDimensions;
+  uint32_t numDim = dest.numDimensions;
   do {
-    int* currentCoords = destIterator.get();
+    uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
       scale * 
       source1.broadcast_at(currentCoords, numDim) /
@@ -433,9 +428,8 @@ void scale(Tensor& source, Tensor& dest, double scale, TensorError* error) {
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  int numDim = dest.numDimensions;
   do {
-    int* currentCoords = destIterator.get();
+    uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
       scale * source.at(currentCoords);
   } while(destIterator.next());

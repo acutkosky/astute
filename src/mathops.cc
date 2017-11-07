@@ -9,9 +9,9 @@
     return; \
   } \
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions); \
-  int numDim = dest.numDimensions; \
+  uint32_t numDim = dest.numDimensions; \
   do { \
-    int* currentCoords = destIterator.get(); \
+    uint32_t* currentCoords = destIterator.get(); \
     dest.at(currentCoords) = \
       ::func_name(source.at(currentCoords)); \
   } while(destIterator.next()); \
@@ -26,9 +26,9 @@ void apply(double(*func)(double), Tensor& source, Tensor& dest, TensorError* err
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  int numDim = dest.numDimensions;
+  uint32_t numDim = dest.numDimensions;
   do {
-    int* currentCoords = destIterator.get();
+    uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
       (*func)(source.at(currentCoords));
   } while(destIterator.next());
@@ -41,9 +41,9 @@ void pow(Tensor& source, double exponent, Tensor& dest, TensorError* error) {
   }
 
   MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
-  int numDim = dest.numDimensions;
+  uint32_t numDim = dest.numDimensions;
   do {
-    int* currentCoords = destIterator.get();
+    uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
       ::pow(source.at(currentCoords), exponent);
   } while(destIterator.next());

@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <stdint.h>
 using std::cout;
 using std::endl;
 
@@ -28,7 +29,7 @@ extern TensorError globalError;
   * a MxNxK tensor has 
   * dimensions = [K, N, M]
   *
-  * We always maintain the guarantee that the order in dimensions
+  * We always mauint32_tain the guarantee that the order in dimensions
   * represents the layout of the data in the data array. That is,
   * if dimensions = [K, N, M], then 
   * data[k + nK + mKN] is either the mnk th element of the Tensor if 
@@ -38,33 +39,35 @@ extern TensorError globalError;
   */
 struct Tensor {
   double* data;
-  int numDimensions;
-  int* dimensions;
-  int* strides;
-  int initial_offset;
+  uint32_t numDimensions;
+  uint32_t* dimensions;
+  uint32_t* strides;
+  uint32_t initial_offset;
 
-  int totalSize(void);
+  uint32_t totalSize(void);
 
-  double& at(int* coords, TensorError* error=&globalError);
+  double& at(uint32_t* coords, TensorError* error=&globalError);
 
-  // double& at(int* prefixCoords, int* suffixCoords, int suffixSize);
+  // double& at(uint32_t* prefixCoords, uint32_t* suffixCoords, uint32_t suffixSize);
 
-  double& broadcast_at(int* coords, int numCoords, TensorError* error=&globalError);
+  double& broadcast_at(uint32_t* coords, uint32_t numCoords, TensorError* error=&globalError);
 
   void setStrides(bool dimensionsInReversedOrder);
+
+  bool isValid(void);
 };
 
 struct TensorIterator {
   Tensor* T;
   double* iterator;
-  int* currentCoords;
+  uint32_t* currentCoords;
   bool ended;
 
   TensorIterator(Tensor& t) {
     T = &t;
-    currentCoords = new int[T->numDimensions];
+    currentCoords = new uint32_t[T->numDimensions];
     ended = false;
-    for(int i=0; i<T->numDimensions; i++) {
+    for(uint32_t i=0; i<T->numDimensions; i++) {
       currentCoords[i] = 0;
     }
     iterator = &T->at(currentCoords);
@@ -80,17 +83,17 @@ struct TensorIterator {
 };
 
 struct MultiIndexIterator {
-  int* dimensions;
-  int numDimensions;
-  int* currentCoords;
+  uint32_t* dimensions;
+  uint32_t numDimensions;
+  uint32_t* currentCoords;
   bool ended;
 
-  MultiIndexIterator(int* _dimensions, int _numDimensions) {
+  MultiIndexIterator(uint32_t* _dimensions, uint32_t _numDimensions) {
     dimensions = _dimensions;
     numDimensions = _numDimensions;
-    currentCoords = new int[numDimensions];
+    currentCoords = new uint32_t[numDimensions];
     ended = false;
-    for(int i=0; i<numDimensions; i++) {
+    for(uint32_t i=0; i<numDimensions; i++) {
       currentCoords[i] = 0;
     }
   }
@@ -100,14 +103,14 @@ struct MultiIndexIterator {
   }
 
   bool next(void);
-  int* get(void);
+  uint32_t* get(void);
 };
 
-void contract(Tensor& source1, Tensor& source2, Tensor& dest, int dimsToContract, TensorError* error=&globalError);
+void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToContract, TensorError* error=&globalError);
 
 double scalarProduct(Tensor& t1, Tensor& t2, TensorError* error);
 
-void subTensor(Tensor& source, int* heldCoords, int* heldValues, int numHeld, Tensor& dest, TensorError* error=&globalError);
+void subTensor(Tensor& source, uint32_t* heldCoords, uint32_t* heldValues, uint32_t numHeld, Tensor& dest, TensorError* error=&globalError);
 
 bool matchedDimensions(Tensor& t1, Tensor& t2);
 
