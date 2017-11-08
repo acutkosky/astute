@@ -1,10 +1,66 @@
 #include<node.h>
 #include "tensor.h"
+#include "mathops.h"
 #include <iostream>
 #include <string>
 
 #define GET_CONTENTS(view) \
 (static_cast<unsigned char*>(view->Buffer()->GetContents().Data()) + view->ByteOffset())
+
+#define CREATE_OP(name) \
+void name(const FunctionCallbackInfo<Value>& args) { \
+  Isolate* isolate = args.GetIsolate(); \
+  if(args.Length() < 2) { \
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Requires 2 arguments: source, dest"))); \
+    return; \
+  } \
+ \
+  Tensor source = cTensorFromJSTensor(isolate, args[0]); \
+  Tensor dest = cTensorFromJSTensor(isolate, args[1]); \
+ \
+  if(!source.isValid() || !dest.isValid()) { \
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data"))); \
+    return; \
+  } \
+ \
+  TensorError error = tensor::NoError; \
+  tensor::name(source, dest, &error); \
+  if(error != tensor::NoError) { \
+    std::string errorString = std::string("Error in " #name ": ") + makeErrorString(error); \
+    isolate->ThrowException(Exception::TypeError( \
+        String::NewFromUtf8(isolate, errorString.c_str()) )); \
+    return; \
+  } \
+}
+//end CREATE_OP definition
+#define CREATE_BINARY_OP(name) void name(const FunctionCallbackInfo<Value>& args) { \
+  Isolate* isolate = args.GetIsolate(); \
+  if(args.Length() < 3) { \
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Requires 3 arguments: source1, source2, dest"))); \
+    return; \
+  } \
+ \
+  Tensor source1 = cTensorFromJSTensor(isolate, args[0]); \
+  Tensor source2 = cTensorFromJSTensor(isolate, args[1]); \
+  Tensor dest = cTensorFromJSTensor(isolate, args[2]); \
+ \
+  if(!source1.isValid() || !source2.isValid() || !dest.isValid()) { \
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data"))); \
+    return; \
+  } \
+  TensorError error = tensor::NoError; \
+  tensor::name(source1, source2, dest, &error); \
+  if(error != tensor::NoError) { \
+    std::string errorString = std::string("Error in " #name ": ") + makeErrorString(error); \
+    isolate->ThrowException(Exception::TypeError( \
+        String::NewFromUtf8(isolate, errorString.c_str()) )); \
+    return; \
+  } \
+}
+//end of CREATE_BINARY_OP definition
+
+#define DECLARE_OP(name) NODE_SET_METHOD(exports, #name, name);
+#define DECLARE_BINARY_OP(name) NODE_SET_METHOD(exports, #name, name);
 
 namespace nodetensor {
 
@@ -75,6 +131,19 @@ std::string makeErrorString(TensorError error) {
   return std::string("Unknown Error");
 }
 
+
+/**
+  * extracts a Tensor object as defined in tensor.h from a js object with
+  * fields of the same name. All C++ arrays in the Tensor object correspond
+  * to either Float64Array or Uint32Array objects in the js object.
+  * Does some error checking to attempt to save you from buffer-overflows
+  * down the line.
+  * If the error checking fails, the returned Tensor object has data=NULL
+  * and the isValid() method will return false.
+  *
+  * It is the responsibility of the caller to check isValid() and return an
+  * appropriate error to the javascript context.
+  **/
 Tensor cTensorFromJSTensor(Isolate* isolate, const Local<Value> jsTensor) {
   Tensor cTensor;
 
@@ -458,6 +527,30 @@ void scale(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
+CREATE_OP(exp)
+CREATE_OP(abs)
+CREATE_OP(sqrt)
+CREATE_OP(sin)
+CREATE_OP(cos)
+CREATE_OP(tan)
+CREATE_OP(sinh)
+CREATE_OP(cosh)
+CREATE_OP(tanh)
+CREATE_OP(log)
+CREATE_OP(atan)
+CREATE_OP(acos)
+CREATE_OP(asin)
+CREATE_OP(atanh)
+CREATE_OP(acosh)
+CREATE_OP(asinh)
+CREATE_OP(erf)
+CREATE_OP(floor)
+CREATE_OP(ceil)
+CREATE_OP(round)
+
+CREATE_BINARY_OP(pow)
+CREATE_BINARY_OP(fmod)
+
 
 void Method(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
@@ -473,12 +566,40 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "contract", contract);
   NODE_SET_METHOD(exports, "scalarProduct", scalarProduct);
   NODE_SET_METHOD(exports, "subTensor", subTensor);
-  NODE_SET_METHOD(exports, "addScale", subTensor);
-  NODE_SET_METHOD(exports, "multiplyScale", subTensor);
-  NODE_SET_METHOD(exports, "divideScale", subTensor);
-  NODE_SET_METHOD(exports, "scale", subTensor);
+  NODE_SET_METHOD(exports, "addScale", addScale);
+  NODE_SET_METHOD(exports, "multiplyScale", multiplyScale);
+  NODE_SET_METHOD(exports, "divideScale", divideScale);
+  NODE_SET_METHOD(exports, "scale", scale);
+
+  DECLARE_OP(exp)
+  DECLARE_OP(abs)
+  DECLARE_OP(sqrt)
+  DECLARE_OP(sin)
+  DECLARE_OP(cos)
+  DECLARE_OP(tan)
+  DECLARE_OP(sinh)
+  DECLARE_OP(cosh)
+  DECLARE_OP(tanh)
+  DECLARE_OP(log)
+  DECLARE_OP(atan)
+  DECLARE_OP(acos)
+  DECLARE_OP(asin)
+  DECLARE_OP(atanh)
+  DECLARE_OP(acosh)
+  DECLARE_OP(asinh)
+  DECLARE_OP(erf)
+  DECLARE_OP(floor)
+  DECLARE_OP(ceil)
+  DECLARE_OP(round)
+
+  DECLARE_BINARY_OP(pow)
+  DECLARE_BINARY_OP(fmod)
 }
 
 NODE_MODULE(NODE_GYP_MODULE_NAME, init)
 
 }
+
+#undef DECLARE_OP
+#undef DECLARE_BINARY_OP
+#undef CREATE_OP

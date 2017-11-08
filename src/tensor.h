@@ -118,6 +118,8 @@ bool matchedDimensions(Tensor& t1, Tensor& t2);
 
 bool compatibleDimensions(Tensor& t1, Tensor& t2);
 
+bool isBroadcastDimension(Tensor& source1, Tensor& source2, Tensor& dest);
+
 void transpose(Tensor& source, Tensor& dest, TensorError* error=&globalError);
 
 void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error=&globalError);
