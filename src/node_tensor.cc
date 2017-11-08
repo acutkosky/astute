@@ -150,7 +150,6 @@ Tensor cTensorFromJSTensor(Isolate* isolate, const Local<Value> jsTensor) {
   Local<Context> context = isolate->GetCurrentContext();
 
   Local<Object> obj = jsTensor->ToObject();
-
   Local<Value> tempValue;
   MaybeLocal<Value> tempMaybe;
   tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"numDimensions"));
@@ -164,7 +163,6 @@ Tensor cTensorFromJSTensor(Isolate* isolate, const Local<Value> jsTensor) {
     return cTensor;
   }
   cTensor.numDimensions = tempValue->Uint32Value();
-
 
   tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"initial_offset"));
   if(tempMaybe.IsEmpty()) {
@@ -496,7 +494,7 @@ void scale(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 3) {
     // Throw an Error that is passed back to JavaScript
     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Requires 4 arguments: source, dest, scale")));
+        String::NewFromUtf8(isolate, "Requires 3 arguments: source, dest, scale")));
     return;
   }
 

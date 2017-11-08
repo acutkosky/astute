@@ -26,7 +26,7 @@ uint32_t Tensor::maximumOffset(void) {
   uint32_t offset = this->initial_offset;
 
   for(uint32_t i=0; i<this->numDimensions; i++) {
-    offset += this->dimensions[i]*this->strides[i];
+    offset += (this->dimensions[i]-1)*this->strides[i];
   }
 
   return offset;
