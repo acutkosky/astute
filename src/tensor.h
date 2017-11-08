@@ -110,7 +110,7 @@ struct MultiIndexIterator {
 
 void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToContract, TensorError* error=&globalError);
 
-double scalarProduct(Tensor& t1, Tensor& t2, TensorError* error);
+double scalarProduct(Tensor& t1, Tensor& t2, TensorError* error=&globalError);
 
 void subTensor(Tensor& source, uint32_t* heldCoords, uint32_t* heldValues, uint32_t numHeld, Tensor& dest, TensorError* error=&globalError);
 
@@ -120,22 +120,22 @@ bool compatibleDimensions(Tensor& t1, Tensor& t2);
 
 void transpose(Tensor& source, Tensor& dest, TensorError* error=&globalError);
 
-void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error);
+void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error=&globalError);
 
-void multiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error);
+void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error=&globalError);
 
-void divideScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error);
+void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error=&globalError);
 
-void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
+void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
-void subtract(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
+void subtract(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
-void multiply(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
+void multiply(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
-void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
+void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
-void scale(Tensor& source, Tensor& dets, double scale);
+void scale(Tensor& source, Tensor& dest, double scale, TensorError* error=&globalError);
 
-void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error);
+void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
 } //namespace tensor
