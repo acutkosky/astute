@@ -1,7 +1,7 @@
 /* jshint esversion:6 */
 
-var tensor = require('src/tensor.js');
-var mathops = require('src/mathops.js');
+var tensor = require('./src/tensor');
+var mathops = require('./src/mathops');
 
 for (let key in tensor) {
   exports[key] = tensor[key];
