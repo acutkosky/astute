@@ -1,8 +1,8 @@
 {
   "targets": [
     {
-      "target_name": "tensor",
-      "sources": [ 
+      "target_name": "tensorBinding",
+      "sources": [
         "src/node_tensor.cc",
         "src/tensor.cc",
         "src/mathops.cc"

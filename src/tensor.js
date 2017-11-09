@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 
-var nodetensor = require('../build/Release/tensor');
+var nodetensor = require('../build/Release/tensorBinding');
 
 var DimensionType = Uint32Array;
 var DataStorageType = Float64Array;
@@ -118,6 +118,24 @@ function print2DTensor(tensor) {
 }
 exports.print2DTensor = print2DTensor;
 
+function print1DTensor(tensor) {
+  var strings = [];
+  for(let i=0; i<2; i++) {
+    strings.push(tensor.at([i]));
+    strings.push(' ');
+  }
+  return strings.join('');
+}
+exports.print1DTensor = print1DTensor;
+
+function printTensor(tensor) {
+  if(tensor.numDimensions == 2)
+    return print2DTensor(tensor);
+  if(tensor.numDimensions == 1)
+    return print1DTensor(tensor);
+  return tensor;
+}
+exports.printTensor = printTensor;
 
 function zerosLike(shape) {
   if(source instanceof Tensor) {
