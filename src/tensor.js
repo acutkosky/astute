@@ -107,8 +107,8 @@ exports.Tensor = Tensor;
 
 function print2DTensor(tensor) {
   var strings = [];
-  for(let i=0; i<2; i++) {
-    for(let j=0; j<2; j++) {
+  for(let i=0; i<tensor.shape[0]; i++) {
+    for(let j=0; j<tensor.shape[1]; j++) {
       strings.push(tensor.at([i,j]));
       strings.push(' ');
     }
@@ -120,7 +120,7 @@ exports.print2DTensor = print2DTensor;
 
 function print1DTensor(tensor) {
   var strings = [];
-  for(let i=0; i<2; i++) {
+  for(let i=0; i<tensor.shape[0]; i++) {
     strings.push(tensor.at([i]));
     strings.push(' ');
   }
@@ -138,8 +138,8 @@ function printTensor(tensor) {
 exports.printTensor = printTensor;
 
 function zerosLike(shape) {
-  if(source instanceof Tensor) {
-    shape = source.shape;
+  if(shape instanceof Tensor) {
+    shape = shape.shape;
   }
   return new Tensor({shape});
 }
@@ -194,46 +194,4 @@ function numberToTensor(number) {
 }
 exports.numberToTensor = numberToTensor;
 
-
-
-function exportBinaryOp(opname) {
-  function binaryOp(source1, source2, dest) {
-    source1 = numberToTensor(source1);
-    source2 = numberToTensor(source2);
-    if(dest === undefined)
-      dest = zerosLike(broadcastShape(source1, source2));
-
-    nodetensor[opname](souce1, source2, dest);
-
-    return dest;
-  }
-  return binaryOp;
-}
-
-
-
-function pow(base, power, dest) {
-  power = numberToTensor(power);
-  base = numberToTensor(base);
-
-  if(dest === undefined)
-    dest = zerosLike(broadcastShape(base, power));
-
-  nodetensor.exp(base, power, dest);
-
-  return dest;
-}
-exports.pow = pow;
-
-function fmod(source, mod, dest) {
-  source = numberToTensor(source);
-  mod = number(mod);
-  if(dest === undefined)
-    dest = zerosLike(broadcastShape(source,  mode));
-
-  nodetensor.fmod(source, mod, dest);
-
-  return dest;
-}
-exports.fmod = fmod;
 

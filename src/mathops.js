@@ -1,9 +1,9 @@
-tensor = require('./src/tensor.js');
-nodetensor = require('./build/Release/tensorBinding');
+tensor = require('./tensor');
+nodetensor = require('../build/Release/tensorBinding');
 
 function exportOp(opname) {
   function op(source, dest) {
-    source1 = tensor.numberToTensor(source);
+    source = tensor.numberToTensor(source);
     if(dest === undefined)
       dest = tensor.zerosLike(source);
 
@@ -11,7 +11,7 @@ function exportOp(opname) {
 
     return dest;
   }
-  exports[opname] = binaryOp;
+  exports[opname] = op;
 }
 
 
@@ -26,31 +26,30 @@ function exportBinaryOp(opname) {
 
     return dest;
   }
-  tensor.prototype.
   exports[opname] = binaryOp;
 }
 
 
-exportOp(exp);
-exportOp(abs);
-exportOp(sqrt);
-exportOp(sin);
-exportOp(cos);
-exportOp(tan);
-exportOp(sinh);
-exportOp(cosh);
-exportOp(tanh);
-exportOp(log);
-exportOp(atan);
-exportOp(acos);
-exportOp(asin);
-exportOp(atanh);
-exportOp(acosh);
-exportOp(asinh);
-exportOp(erf);
-exportOp(floor);
-exportOp(ceil);
-exportOp(round);
+exportOp('exp');
+exportOp('abs');
+exportOp('sqrt');
+exportOp('sin');
+exportOp('cos');
+exportOp('tan');
+exportOp('sinh');
+exportOp('cosh');
+exportOp('tanh');
+exportOp('log');
+exportOp('atan');
+exportOp('acos');
+exportOp('asin');
+exportOp('atanh');
+exportOp('acosh');
+exportOp('asinh');
+exportOp('erf');
+exportOp('floor');
+exportOp('ceil');
+exportOp('round');
 
-exportBinaryOp(exp);
-exportBinaryOp(fmod);
+exportBinaryOp('exp');
+exportBinaryOp('fmod');
