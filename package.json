@@ -1,6 +1,6 @@
 {
   "name": "astute",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "astute.js",
   "description": "a machine learning and tensor algebra package for node",
   "scripts": {
@@ -12,5 +12,5 @@
   },
   "author": "Ashok Cutkosky",
   "license": "ISC",
-   "gypfile": true
+  "gypfile": true
 }
