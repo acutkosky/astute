@@ -4,8 +4,13 @@
   "main": "src/astute.js",
   "description": "a machine learning and tensor algebra package for node",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp configure && node-gyp rebuild"
+  },
+  "repository": {
+    "git": "https://github.com/acutkosky/astute"
   },
   "author": "Ashok Cutkosky",
-  "license": "ISC"
+  "license": "ISC",
+   "gypfile": true
 }
