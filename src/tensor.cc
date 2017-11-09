@@ -254,9 +254,9 @@ void print2DCoord(uint32_t* coords) {
 
 bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToContract) {
 
-  if(source1.numDimensions <= dimsToContract)
+  if(source1.numDimensions < dimsToContract)
     return false;
-  if(source2.numDimensions <= dimsToContract)
+  if(source2.numDimensions < dimsToContract)
     return false;
 
 
@@ -660,7 +660,7 @@ void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest
   //assume source1 is the matrix and source2 is the tensor.
   //transpose source1 if necessary.
   CBLAS_ORDER order = CblasRowMajor;
-  CBLAS_TRANSPOSE cblas_trans = transpose?CblasTrans:CblasTrans;
+  CBLAS_TRANSPOSE cblas_trans = transpose?CblasTrans:CblasNoTrans;
   int matrixStride = MAX(matrix.strides[0], matrix.strides[1]);
   int vectorStride = vector.strides[0];
   int destStride = dest.strides[0];
@@ -673,7 +673,6 @@ void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest
     simpleMatVectMul(transpose, matrix, vector, dest);
     return;
   }
-
   cblas_dgemv(order, cblas_trans, matrix.shape[0], matrix.shape[1], 1.0, matrix.data+matrix.initial_offset, matrixStride, vector.data+vector.initial_offset, vectorStride, 0, dest.data+dest.initial_offset, destStride);
   return;
 }
