@@ -1,4 +1,5 @@
 #include <iostream>
+#include "cblas.h"
 
 #include "tensor.h"
 namespace tensor {
@@ -14,7 +15,7 @@ uint32_t Tensor::totalSize(void) {
   }
   uint32_t accumulator = 1;
   for(uint32_t i=0; i<this->numDimensions; i++) {
-    accumulator *= this->dimensions[i];
+    accumulator *= this->shape[i];
   }
   return accumulator;
 }
@@ -26,7 +27,7 @@ uint32_t Tensor::maximumOffset(void) {
   uint32_t offset = this->initial_offset;
 
   for(uint32_t i=0; i<this->numDimensions; i++) {
-    offset += (this->dimensions[i]-1)*this->strides[i];
+    offset += (this->shape[i]-1)*this->strides[i];
   }
 
   return offset;
@@ -39,7 +40,7 @@ bool Tensor::isValid(void) {
 double& Tensor::at(uint32_t* coords, TensorError* error) {
   uint32_t offset = this->initial_offset;
   for(uint32_t i=0; i<this->numDimensions; i++) {
-    if(coords[i] >= this->dimensions[i]) {
+    if(coords[i] >= this->shape[i]) {
       *error = IndexOutOfBounds;
       return this->data[offset];
     }
@@ -51,7 +52,7 @@ double& Tensor::at(uint32_t* coords, TensorError* error) {
 double& Tensor::broadcast_at(uint32_t* coords, uint32_t numCoords, TensorError* error) {
   uint32_t offset = this->initial_offset;
   for(uint32_t i=0; i<this->numDimensions; i++) {
-    uint32_t dimension = this->dimensions[this->numDimensions - i - 1];
+    uint32_t dimension = this->shape[this->numDimensions - i - 1];
     uint32_t stride = this->strides[this->numDimensions - i - 1];
     uint32_t coord = coords[numCoords -i -1];
     if(coord < dimension) {
@@ -66,14 +67,14 @@ double& Tensor::broadcast_at(uint32_t* coords, uint32_t numCoords, TensorError* 
 
 /**
   * sets the strides pouint32_ter in the tensor object.
-  * dimensionsInReversedOrder specifies whether the tensor is 
+  * shapeInReversedOrder specifies whether the tensor is 
   * stored in "column major" or "row major" order. Specifically, if
-  * dimensionsInReversedOrder is true, the ijk th element of a NxMxK tensor
+  * shapeInReversedOrder is true, the ijk th element of a NxMxK tensor
   * is located at
   *   data[i + j*N + k*MN]
   * and so strides will be set to 
   *   [1, N, MN]
-  * if dimensionsInReversedOrder is true, the ikj element is at
+  * if shapeInReversedOrder is true, the ikj element is at
   *   data[i*MK + j*K + k]
   * and so strides will be set to
   * [MK, K, 1]
@@ -82,18 +83,18 @@ double& Tensor::broadcast_at(uint32_t* coords, uint32_t numCoords, TensorError* 
   * be used externally; we assume that the strides array already exists.
   **/
 
-void Tensor::setStrides(bool dimensionsInReversedOrder) {
-  if(dimensionsInReversedOrder) {
+void Tensor::setStrides(bool shapeInReversedOrder) {
+  if(shapeInReversedOrder) {
     uint32_t currentStride = 1;
     for(uint32_t i=0; i<numDimensions; i++) {
       this->strides[i] = currentStride;
-      currentStride *= this->dimensions[i];
+      currentStride *= this->shape[i];
     }
   } else {
     uint32_t currentStride = 1;
     for(int i=this->numDimensions-1; i>=0; i--) {
       this->strides[i] = currentStride;
-      currentStride *= this->dimensions[i];
+      currentStride *= this->shape[i];
     }
   }
 }
@@ -108,7 +109,7 @@ void transpose(Tensor& source, Tensor& dest, TensorError* error) {
     return;
   }
   for(uint32_t i=0; i<source.numDimensions; i++) {
-    dest.dimensions[i] = source.dimensions[source.numDimensions-1-i];
+    dest.shape[i] = source.shape[source.numDimensions-1-i];
     dest.strides[i] = source.strides[source.numDimensions-1-i];
   }
   dest.initial_offset = source.initial_offset;
@@ -120,7 +121,7 @@ bool matchedDimensions(Tensor& t1, Tensor& t2) {
     return false;
 
   for(uint32_t i=0; i<t1.numDimensions; i++) {
-    if(t1.dimensions[i] != t2.dimensions[i])
+    if(t1.shape[i] != t2.shape[i])
       return false;
   }
 
@@ -131,11 +132,11 @@ bool compatibleDimensions(Tensor& t1, Tensor& t2) {
   uint32_t minimumDim = MIN(t1.numDimensions, t2.numDimensions);
 
   for(uint32_t i=0; i<minimumDim; i++) {
-    if(t1.dimensions[t1.numDimensions-1-i] == 1)
+    if(t1.shape[t1.numDimensions-1-i] == 1)
       continue;
-    if(t2.dimensions[t2.numDimensions-1-i] == 1)
+    if(t2.shape[t2.numDimensions-1-i] == 1)
       continue;
-    if(t1.dimensions[t1.numDimensions-1-i] == t2.dimensions[t2.numDimensions-1-i])
+    if(t1.shape[t1.numDimensions-1-i] == t2.shape[t2.numDimensions-1-i])
       continue;
 
     return false;
@@ -174,7 +175,7 @@ void subTensor(Tensor& source, uint32_t* heldCoords, uint32_t* heldValues, uint3
   uint32_t offset = source.initial_offset;
   for(uint32_t i=0; i<source.numDimensions; i++) {
     if(heldCoordsIndex>= numHeld || i!=heldCoords[heldCoordsIndex]) {
-      dest.dimensions[destDimensionIndex] = source.dimensions[i];
+      dest.shape[destDimensionIndex] = source.shape[i];
       dest.strides[destDimensionIndex] = source.strides[i];
       destDimensionIndex++;
     } else {
@@ -188,18 +189,18 @@ void subTensor(Tensor& source, uint32_t* heldCoords, uint32_t* heldValues, uint3
 bool TensorIterator::next(void) {
   uint32_t i = 0;
   uint32_t offset = 0;
-  currentCoords[i] = (currentCoords[i] + 1) % T->dimensions[i];
+  currentCoords[i] = (currentCoords[i] + 1) % T->shape[i];
 
   offset += T->strides[i];
   while(currentCoords[i] == 0) {
-    offset -= T->strides[i] * T->dimensions[i];
+    offset -= T->strides[i] * T->shape[i];
     i++;
     if(i>=T->numDimensions) {
       ended = true;
       break;
     }
 
-    currentCoords[i] = (currentCoords[i] + 1) % T->dimensions[i];
+    currentCoords[i] = (currentCoords[i] + 1) % T->shape[i];
     offset += T->strides[i];
 
    }
@@ -214,14 +215,14 @@ double& TensorIterator::get(void) {
 
 bool MultiIndexIterator::next(void) {
   uint32_t i = 0;
-  currentCoords[i] = (currentCoords[i] + 1) % dimensions[i];
+  currentCoords[i] = (currentCoords[i] + 1) % shape[i];
   while(currentCoords[i] == 0) {
     i++;
     if(i>=numDimensions) {
       ended = true;
       break;
     }
-    currentCoords[i] = (currentCoords[i] + 1) % dimensions[i];
+    currentCoords[i] = (currentCoords[i] + 1) % shape[i];
    }
   return !ended;
 }
@@ -262,7 +263,7 @@ bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToC
   for(uint32_t i=0; i<dimsToContract; i++) {
     uint32_t source1Offset = source1.numDimensions - 1 - i;
     uint32_t source2Offset = i;
-    if(source1.dimensions[source1Offset] != source2.dimensions[source2Offset]) 
+    if(source1.shape[source1Offset] != source2.shape[source2Offset]) 
       return false;
   }
 
@@ -282,7 +283,12 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToCon
     return;
   }
 
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  if(source1.numDimensions==2 && source2.numDimensions==2 && dimsToContract==1) {
+    fastMatMul(source1, source2, dest);
+    return;
+  }
+
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
 
   uint32_t* dimRange = new uint32_t[dest.numDimensions];
   for(uint32_t i=0; i<dest.numDimensions; i++) {
@@ -290,12 +296,12 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToCon
   }
   Tensor sub1, sub2;
 
-  sub1.dimensions = new uint32_t[dimsToContract];
+  sub1.shape = new uint32_t[dimsToContract];
   sub1.strides = new uint32_t[dimsToContract];
   sub1.numDimensions = dimsToContract;
   sub1.data = source1.data;
 
-  sub2.dimensions = new uint32_t[dimsToContract];
+  sub2.shape = new uint32_t[dimsToContract];
   sub2.strides = new uint32_t[dimsToContract];
   sub2.numDimensions = dimsToContract;
   sub2.data = source2.data;
@@ -326,9 +332,9 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToCon
 
   } while(destIterator.next());
 
-  delete [] sub1.dimensions;
+  delete [] sub1.shape;
   delete [] sub1.strides;
-  delete [] sub2.dimensions;
+  delete [] sub2.shape;
   delete [] sub2.strides;
 }
 
@@ -342,12 +348,12 @@ bool isBroadcastDimension(Tensor& source1, Tensor& source2, Tensor& dest) {
   for(uint32_t i=0; i<maxDimensions; i++) {
     dimension1 = dimension2 = 1;
     if(i<source1.numDimensions)
-      dimension1 = source1.dimensions[source1.numDimensions - i -1];
+      dimension1 = source1.shape[source1.numDimensions - i -1];
 
     if(i<source2.numDimensions)
-      dimension2= source2.dimensions[source2.numDimensions - i -1];
+      dimension2= source2.shape[source2.numDimensions - i -1];
 
-    if(dest.dimensions[maxDimensions - i -1] != MAX(dimension1, dimension2))
+    if(dest.shape[maxDimensions - i -1] != MAX(dimension1, dimension2))
       return false;
   }
   return true;
@@ -363,7 +369,7 @@ void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, dou
     return;
   }
 
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
   uint32_t numDim = dest.numDimensions;
   do {
     uint32_t* currentCoords = destIterator.get();
@@ -384,7 +390,7 @@ void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale,
     return;
   }
 
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
   uint32_t numDim = dest.numDimensions;
   do {
     uint32_t* currentCoords = destIterator.get();
@@ -406,7 +412,7 @@ void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, T
     return;
   }
 
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
   uint32_t numDim = dest.numDimensions;
   do {
     uint32_t* currentCoords = destIterator.get();
@@ -440,13 +446,84 @@ void scale(Tensor& source, Tensor& dest, double scale, TensorError* error) {
     return;
   }
 
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
   do {
     uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
       scale * source.at(currentCoords);
   } while(destIterator.next());
 }
+
+bool isDense(Tensor& source) {
+  if(source.strides[0]==1) {
+    uint32_t denseStride = 1;
+    for(uint32_t i=0; i<source.numDimensions; i++) {
+      if(source.strides[i] != denseStride)
+        return false;
+      denseStride *= source.shape[i];
+    }
+  } else if(source.strides[source.numDimensions-1] == 1) {
+    uint32_t denseStride = 1;
+    for(uint32_t i=0; i<source.numDimensions; i++) {
+      if(source.strides[source.numDimensions - i -1] != denseStride)
+        return false;
+      denseStride *= source.shape[source.numDimensions - i - 1];
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
+
+void simpleMatMul(Tensor& source1, Tensor& source2, Tensor& dest) {
+  double* destData = dest.data + dest.initial_offset;
+  double* source1Data = source1.data + source1.initial_offset;
+  double* source2Data = source2.data + source2.initial_offset;
+
+  uint32_t destStrides0 = dest.strides[0];
+  uint32_t destStrides1 = dest.strides[1];
+
+  uint32_t source1Strides0 = source1.strides[0];
+  uint32_t source1Strides1 = source1.strides[1];
+
+  uint32_t source2Strides0 = source2.strides[0];
+  uint32_t source2Strides1 = source2.strides[1];
+
+  uint32_t kMax = source1.shape[1];
+
+
+  for(uint32_t i=0; i<dest.shape[0]; i++) {
+    for(uint32_t j=0; j<dest.shape[1]; j++) {
+      double* source1Current = source1Data + i*source1Strides0;
+      double* source2Current = source2Data + j*source2Strides1;
+      double* destCurrent = destData + i*destStrides0 + j*destStrides1;
+      *destCurrent = 0;
+      for(uint32_t k=0; k<kMax; k++) {
+        *destCurrent = (*source1Current) * (*source2Current);
+        source1Current += source1Strides1;
+        source2Current += source2Strides0;
+        destData[i*destStrides0 + j*destStrides1] +=
+          source1Data[i*source1Strides0 + k*source1Strides1]*
+          source2Data[k*source2Strides0 + j*source2Strides1];
+      }
+    }
+  }
+}
+
+void fastMatMul(Tensor& source1, Tensor& source2, Tensor& dest) {
+
+  if(dest.strides[0]==1 && source1.strides[0] == 1 && source2.strides[0] == 1) {
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, source1.shape[0], source2.shape[1], source1.shape[1], 1.0, source1.data+source1.initial_offset, source1.strides[1], source2.data+source2.initial_offset, source2.strides[1], 0.0, dest.data+dest.initial_offset, dest.strides[1]);
+  
+  } else if(dest.strides[1]==1 && source1.strides[1] == 1 && source2.strides[1] == 1) {
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, source1.shape[0], source2.shape[1], source1.shape[1], 1.0, source1.data+source1.initial_offset, source1.strides[0], source2.data+source2.initial_offset, source2.strides[0], 0.0, dest.data+dest.initial_offset, dest.strides[0]);
+  } else {
+    simpleMatMul(source1, source2, dest);
+  }
+
+
+}
+
 
 void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
   return contract(source1, source2, dest, 1, error);

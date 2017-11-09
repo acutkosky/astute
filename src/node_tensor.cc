@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+    // isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data")));
+
 #define GET_CONTENTS(view) \
 (static_cast<unsigned char*>(view->Buffer()->GetContents().Data()) + view->ByteOffset())
 
@@ -19,7 +21,6 @@ void name(const FunctionCallbackInfo<Value>& args) { \
   Tensor dest = cTensorFromJSTensor(isolate, args[1]); \
  \
   if(!source.isValid() || !dest.isValid()) { \
-    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data"))); \
     return; \
   } \
  \
@@ -45,7 +46,6 @@ void name(const FunctionCallbackInfo<Value>& args) { \
   Tensor dest = cTensorFromJSTensor(isolate, args[2]); \
  \
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) { \
-    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data"))); \
     return; \
   } \
   TensorError error = tensor::NoError; \
@@ -84,8 +84,8 @@ using tensor::TensorError;
 
 void print2DTensor(Tensor& T) {
 
-  for(uint32_t i=0; i<T.dimensions[0]; i++) {
-    for(uint32_t j=0; j<T.dimensions[1]; j++) {
+  for(uint32_t i=0; i<T.shape[0]; i++) {
+    for(uint32_t j=0; j<T.shape[1]; j++) {
       cout<<T.at((uint32_t[]){i, j})<<" ";
     }
     cout<<endl;
@@ -93,7 +93,7 @@ void print2DTensor(Tensor& T) {
 }
 
 void print1DTensor(Tensor& T) {
-  for(uint32_t i=0; i<T.dimensions[0]; i++) {
+  for(uint32_t i=0; i<T.shape[0]; i++) {
     cout<<T.at((uint32_t[]){i})<<" ";
   }
   cout<<endl;
@@ -154,11 +154,13 @@ Tensor cTensorFromJSTensor(Isolate* isolate, const Local<Value> jsTensor) {
   MaybeLocal<Value> tempMaybe;
   tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"numDimensions"));
   if(tempMaybe.IsEmpty()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; must define numDimensions")));
     cTensor.data = NULL;
     return cTensor;
   }
   tempValue = tempMaybe.ToLocalChecked();
   if(!tempValue->IsUint32()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; numDimensions must be integer")));
     cTensor.data = NULL;
     return cTensor;
   }
@@ -166,24 +168,28 @@ Tensor cTensorFromJSTensor(Isolate* isolate, const Local<Value> jsTensor) {
 
   tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"initial_offset"));
   if(tempMaybe.IsEmpty()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; must define initial_offset")));
     cTensor.data = NULL;
     return cTensor;
   }
   tempValue = tempMaybe.ToLocalChecked();
   if(!tempValue->IsUint32()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; initial_offset must be integer")));
     cTensor.data = NULL;
     return cTensor;
   }
   cTensor.initial_offset = tempValue->Uint32Value();
 
 
-  tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"dimensions"));
+  tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"shape"));
   if(tempMaybe.IsEmpty()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; must define shape")));
     cTensor.data = NULL;
     return cTensor;
   }
   tempValue = tempMaybe.ToLocalChecked();
   if(!tempValue->IsUint32Array()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; shape must be Uint32Array")));
     cTensor.data = NULL;
     return cTensor;
   }
@@ -191,21 +197,24 @@ Tensor cTensorFromJSTensor(Isolate* isolate, const Local<Value> jsTensor) {
     cTensor.data = NULL;
     return cTensor;
   }
-  cTensor.dimensions = reinterpret_cast<uint32_t*>(GET_CONTENTS(tempValue.As<v8::Uint32Array>()));
+  cTensor.shape = reinterpret_cast<uint32_t*>(GET_CONTENTS(tempValue.As<v8::Uint32Array>()));
 
 
   tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"strides"));
   if(tempMaybe.IsEmpty()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; must define strides")));
     cTensor.data = NULL;
     return cTensor;
   }
   tempValue = tempMaybe.ToLocalChecked();
   if(!tempValue->IsUint32Array()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; strides must be Uint32Array")));
     cTensor.data = NULL;
     return cTensor;
   }
   if(tempValue.As<v8::Uint32Array>()->Length() != cTensor.numDimensions) {
     cTensor.data = NULL;
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; strides has wrong length")));
     return cTensor;
   }
   cTensor.strides = reinterpret_cast<uint32_t*>(GET_CONTENTS(tempValue.As<v8::Uint32Array>()));
@@ -213,15 +222,18 @@ Tensor cTensorFromJSTensor(Isolate* isolate, const Local<Value> jsTensor) {
 
   tempMaybe = obj->Get(context, String::NewFromUtf8(isolate,"data"));
   if(tempMaybe.IsEmpty()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; must define data")));
     cTensor.data = NULL;
     return cTensor;
   }
   tempValue = tempMaybe.ToLocalChecked();
   if(!tempValue->IsFloat64Array()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; data must be Float64Array")));
     cTensor.data = NULL;
     return cTensor;
   }
   if(tempValue.As<v8::Float64Array>()->Length() < cTensor.maximumOffset()) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data; data buffer too small")));
     cTensor.data = NULL;
     return cTensor;
   }
@@ -253,12 +265,11 @@ void contract(const FunctionCallbackInfo<Value>& args) {
 
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
-     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "invalid Tensor data")));
     return;   
   }
 
   TensorError error = tensor::NoError;
+
   tensor::contract(source1, source2, dest, dimsToContract, &error);
 
   if(error != tensor::NoError) {
@@ -282,7 +293,6 @@ void scalarProduct(const FunctionCallbackInfo<Value>& args) {
   Tensor source1 = cTensorFromJSTensor(isolate, args[0]);
   Tensor source2 = cTensorFromJSTensor(isolate, args[1]);
   if(!source1.isValid() || !source2.isValid()) {
-    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data")));
     return;
   }
 
@@ -309,7 +319,6 @@ void subTensor(const FunctionCallbackInfo<Value>& args) {
   Tensor source = cTensorFromJSTensor(isolate, args[0]);
   Tensor dest = cTensorFromJSTensor(isolate, args[4]);
   if(!source.isValid() || !dest.isValid()) {
-    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data")));
     return;
   }
 
@@ -395,8 +404,6 @@ void addScale(const FunctionCallbackInfo<Value>& args) {
   double scale2 = args[4]->NumberValue();
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
-     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "invalid Tensor data")));
     return;   
   }
 
@@ -433,8 +440,6 @@ void multiplyScale(const FunctionCallbackInfo<Value>& args) {
   double scale = args[3]->NumberValue();
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
-     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "invalid Tensor data")));
     return;   
   }
 
@@ -471,8 +476,6 @@ void divideScale(const FunctionCallbackInfo<Value>& args) {
   double scale = args[3]->NumberValue();
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
-     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "invalid Tensor data")));
     return;   
   }
 
@@ -509,8 +512,6 @@ void scale(const FunctionCallbackInfo<Value>& args) {
   double scale = args[2]->NumberValue();
 
   if(!source.isValid() || !dest.isValid()) {
-     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "invalid Tensor data")));
     return;   
   }
 

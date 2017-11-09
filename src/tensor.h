@@ -24,23 +24,23 @@ enum TensorError {
 extern TensorError globalError;
 
 /**
-  * dimensionsInReversedOrder is a flag that (when true) indicates that
-  * dimensions contains dimension sizes in REVERSE order:
+  * shapeInReversedOrder is a flag that (when true) indicates that
+  * shape contains dimension sizes in REVERSE order:
   * a MxNxK tensor has 
-  * dimensions = [K, N, M]
+  * shape = [K, N, M]
   *
-  * We always mauint32_tain the guarantee that the order in dimensions
+  * We always mauint32_tain the guarantee that the order in shape
   * represents the layout of the data in the data array. That is,
-  * if dimensions = [K, N, M], then 
+  * if shape = [K, N, M], then 
   * data[k + nK + mKN] is either the mnk th element of the Tensor if 
-  * dimensionsInReversedOrder=true or the
+  * shapeInReversedOrder=true or the
   * knm th element otherwise.
   * this is useful for copy-free transposing.
   */
 struct Tensor {
   double* data;
   uint32_t numDimensions;
-  uint32_t* dimensions;
+  uint32_t* shape;
   uint32_t* strides;
   uint32_t initial_offset;
 
@@ -54,7 +54,7 @@ struct Tensor {
 
   double& broadcast_at(uint32_t* coords, uint32_t numCoords, TensorError* error=&globalError);
 
-  void setStrides(bool dimensionsInReversedOrder);
+  void setStrides(bool shapeInReversedOrder);
 
   bool isValid(void);
 };
@@ -85,13 +85,13 @@ struct TensorIterator {
 };
 
 struct MultiIndexIterator {
-  uint32_t* dimensions;
+  uint32_t* shape;
   uint32_t numDimensions;
   uint32_t* currentCoords;
   bool ended;
 
-  MultiIndexIterator(uint32_t* _dimensions, uint32_t _numDimensions) {
-    dimensions = _dimensions;
+  MultiIndexIterator(uint32_t* _shape, uint32_t _numDimensions) {
+    shape = _shape;
     numDimensions = _numDimensions;
     currentCoords = new uint32_t[numDimensions];
     ended = false;
@@ -140,4 +140,7 @@ void scale(Tensor& source, Tensor& dest, double scale, TensorError* error=&globa
 
 void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
+void simpleMatMul(Tensor& source1, Tensor& source2, Tensor& dest);
+
+void fastMatMul(Tensor& source1, Tensor& source2, Tensor& dest);
 } //namespace tensor

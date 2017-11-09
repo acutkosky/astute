@@ -8,7 +8,7 @@
     *error = DimensionMismatchError; \
     return; \
   } \
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions); \
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions); \
   do { \
     uint32_t* currentCoords = destIterator.get(); \
     dest.at(currentCoords) = \
@@ -25,7 +25,7 @@
     *error = DimensionMismatchError; \
     return; \
   } \
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions); \
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions); \
   uint32_t numCoords = dest.numDimensions; \
   do { \
     uint32_t* currentCoords = destIterator.get(); \
@@ -42,7 +42,7 @@ void apply(double(*func)(double), Tensor& source, Tensor& dest, TensorError* err
     return;
   }
 
-  MultiIndexIterator destIterator(dest.dimensions, dest.numDimensions);
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
   do {
     uint32_t* currentCoords = destIterator.get();
     dest.at(currentCoords) = 
