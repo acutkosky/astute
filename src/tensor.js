@@ -22,7 +22,7 @@ class Tensor {
       if(strides === undefined) {
         strides = new StrideType(numDimensions);
         var currentStride = 1;
-        for(let i=0; i<numDimensions; i++) {
+        for(let i=numDimensions-1; i>=0; i--) {
           strides[i] = currentStride;
           currentStride *= shape[i];
         }
