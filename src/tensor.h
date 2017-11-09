@@ -128,6 +128,12 @@ void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale,
 
 void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error=&globalError);
 
+void denseAddScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2);
+
+void denseMultiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale);
+
+void denseDivideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale);
+
 void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
 void subtract(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
@@ -143,4 +149,9 @@ void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&
 void simpleMatMul(Tensor& source1, Tensor& source2, Tensor& dest);
 
 void fastMatMul(Tensor& source1, Tensor& source2, Tensor& dest);
+
+void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest);
+
+bool isDense(Tensor& source);
+
 } //namespace tensor

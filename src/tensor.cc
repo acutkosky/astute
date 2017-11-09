@@ -288,6 +288,15 @@ void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToCon
     return;
   }
 
+  if(source1.numDimensions==2 && source2.numDimensions==1 && dimsToContract==1) {
+    fastMatVectMul(false, source1, source2, dest);
+    return;
+  }
+  if(source1.numDimensions==1 && source2.numDimensions==2 && dimsToContract==1) {
+    fastMatVectMul(true, source2, source1, dest);
+    return;
+  }
+
   MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
 
   uint32_t* dimRange = new uint32_t[dest.numDimensions];
@@ -359,6 +368,19 @@ bool isBroadcastDimension(Tensor& source1, Tensor& source2, Tensor& dest) {
   return true;
 }
 
+bool identicalLayout(Tensor& tensor1, Tensor& tensor2) {
+  if(tensor1.numDimensions != tensor2.numDimensions)
+    return false;
+
+  for(uint32_t i=0; i<tensor1.numDimensions; i++) {
+    if(tensor1.strides[i] != tensor2.strides[i])
+      return false;
+    if(tensor1.shape[i] != tensor2.shape[i])
+      return false;
+  }
+  return true;
+}
+
 void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error) {
   if(!compatibleDimensions(source1, source2)) {
     *error = DimensionMismatchError;
@@ -366,6 +388,11 @@ void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, dou
   }
   if(!isBroadcastDimension(source1, source2, dest)) {
     *error = DimensionMismatchError;
+    return;
+  }
+
+  if(identicalLayout(dest, source1) && identicalLayout(dest, source2) && isDense(dest)) {
+    denseAddScale(source1, source2, dest, scale1, scale2);
     return;
   }
 
@@ -380,6 +407,19 @@ void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, dou
 
 }
 
+void denseAddScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2) {
+  uint32_t totalSize = source1.totalSize();
+  double* source1Iterator = source1.data + source1.initial_offset;
+  double* source2Iterator = source2.data + source2.initial_offset;
+  double* destIterator = dest.data + dest.initial_offset;
+  for(uint32_t i = 0; i<totalSize; i++) {
+    *destIterator = scale1 * (*source1Iterator) + scale2* (*source2Iterator);
+    destIterator++;
+    source1Iterator++;
+    source2Iterator++;
+  }
+}
+
 void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error) {
   if(!compatibleDimensions(source1, source2)) {
     *error = DimensionMismatchError;
@@ -387,6 +427,11 @@ void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale,
   }
   if(!isBroadcastDimension(source1, source2, dest)) {
     *error = DimensionMismatchError;
+    return;
+  }
+
+  if(identicalLayout(dest, source1) && identicalLayout(dest, source2) && isDense(dest)) {
+    denseMultiplyScale(source1, source2, dest, scale);
     return;
   }
 
@@ -402,6 +447,19 @@ void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale,
 
 }
 
+void denseMultiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale) {
+  uint32_t totalSize = source1.totalSize();
+  double* source1Iterator = source1.data + source1.initial_offset;
+  double* source2Iterator = source2.data + source2.initial_offset;
+  double* destIterator = dest.data + dest.initial_offset;
+  for(uint32_t i = 0; i<totalSize; i++) {
+    *destIterator = scale * (*source1Iterator) * (*source2Iterator);
+    destIterator++;
+    source1Iterator++;
+    source2Iterator++;
+  }
+}
+
 void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error) {
   if(!compatibleDimensions(source1, source2)) {
     *error = DimensionMismatchError;
@@ -409,6 +467,11 @@ void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, T
   }
   if(!isBroadcastDimension(source1, source2, dest)) {
     *error = DimensionMismatchError;
+    return;
+  }
+
+  if(identicalLayout(dest, source1) && identicalLayout(dest, source2) && isDense(dest)) {
+    denseDivideScale(source1, source2, dest, scale);
     return;
   }
 
@@ -422,6 +485,19 @@ void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, T
       source2.broadcast_at(currentCoords, numDim);
   } while(destIterator.next());
 
+}
+
+void denseDivideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale) {
+  uint32_t totalSize = source1.totalSize();
+  double* source1Iterator = source1.data + source1.initial_offset;
+  double* source2Iterator = source2.data + source2.initial_offset;
+  double* destIterator = dest.data + dest.initial_offset;
+  for(uint32_t i = 0; i<totalSize; i++) {
+    *destIterator = scale * (*source1Iterator) / (*source2Iterator);
+    destIterator++;
+    source1Iterator++;
+    source2Iterator++;
+  }
 }
 
 void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
@@ -509,18 +585,97 @@ void simpleMatMul(Tensor& source1, Tensor& source2, Tensor& dest) {
 
 void fastMatMul(Tensor& source1, Tensor& source2, Tensor& dest) {
 
-  if(dest.strides[0]==1 && source1.strides[0] == 1 && source2.strides[0] == 1) {
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, source1.shape[0], source2.shape[1], source1.shape[1], 1.0, source1.data+source1.initial_offset, source1.strides[1], source2.data+source2.initial_offset, source2.strides[1], 0.0, dest.data+dest.initial_offset, dest.strides[1]);
-  
-  } else if(dest.strides[1]==1 && source1.strides[1] == 1 && source2.strides[1] == 1) {
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, source1.shape[0], source2.shape[1], source1.shape[1], 1.0, source1.data+source1.initial_offset, source1.strides[0], source2.data+source2.initial_offset, source2.strides[0], 0.0, dest.data+dest.initial_offset, dest.strides[0]);
-  } else {
+  if(!isDense(source1) || !isDense(source2) || !isDense(dest)) {
     simpleMatMul(source1, source2, dest);
+    return;
   }
 
+  CBLAS_ORDER order=CblasRowMajor;
+  CBLAS_TRANSPOSE transpose1=CblasNoTrans;
+  CBLAS_TRANSPOSE transpose2=CblasNoTrans;
+  uint32_t source1Stride = MAX(source1.strides[0], source1.strides[1]);
+  uint32_t source2Stride = MAX(source2.strides[0], source2.strides[1]);
+  uint32_t destStride = MAX(dest.strides[0], dest.strides[1]);
+  if(dest.strides[0] == 1) {
+    order = CblasColMajor;
+    if(source1.strides[0] == 1) {
+      transpose1 = CblasNoTrans;
+    } else {
+      transpose1 = CblasTrans;
+    }
+
+    if(source2.strides[0] == 1) {
+      transpose2 = CblasNoTrans;
+    } else {
+      transpose2 = CblasTrans;
+    }
+
+  } else if(dest.strides[1] == 1) {
+    order = CblasRowMajor;
+    if(source1.strides[1] == 1) {
+      transpose1 = CblasNoTrans;
+    } else {
+      transpose1 = CblasTrans;
+    }
+
+    if(source2.strides[1] == 1) {
+      transpose2 = CblasNoTrans;
+    } else {
+      transpose2 = CblasTrans;
+    }
+  }
+  cblas_dgemm(order, transpose1, transpose2, source1.shape[0], source2.shape[1], source1.shape[1], 1.0, source1.data+source1.initial_offset, source1Stride, source2.data+source2.initial_offset, source2Stride, 0.0, dest.data+dest.initial_offset, destStride);
+}
+
+void simpleMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest) {
+  double* destData = dest.data + dest.initial_offset;
+  double* matrixData = matrix.data + matrix.initial_offset;
+  double* vectorData = vector.data + vector.initial_offset;
+
+  uint32_t destStride = dest.strides[0];
+
+  uint32_t matrixStrides0 = transpose?matrix.strides[1]:matrix.strides[0];
+  uint32_t matrixStrides1 = transpose?matrix.strides[0]:matrix.strides[1];
+
+  uint32_t vectorStride = vector.strides[0];
+
+  uint32_t innerDim = transpose?matrix.shape[0]:matrix.shape[1];
 
 
+  for(uint32_t i=0; i<dest.shape[0]; i++) {
+    double* matrixCurrent = matrixData + i*matrixStrides0;
+    double* vectorCurrent = vectorData;
+    double* destCurrent = destData + i*destStride;
+    *destCurrent = 0;
+    for(uint32_t j=0; j<innerDim; j++) {
+      *destCurrent += (*matrixCurrent) * (*vectorCurrent);
+      matrixCurrent += matrixStrides1;
+      vectorCurrent += vectorStride;
+    }
+  }
+}
 
+
+void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest) {
+  //assume source1 is the matrix and source2 is the tensor.
+  //transpose source1 if necessary.
+  CBLAS_ORDER order = CblasRowMajor;
+  CBLAS_TRANSPOSE cblas_trans = transpose?CblasTrans:CblasTrans;
+  int matrixStride = MAX(matrix.strides[0], matrix.strides[1]);
+  int vectorStride = vector.strides[0];
+  int destStride = dest.strides[0];
+
+  if(matrix.strides[0] == 1) {
+    order = CblasColMajor;
+  } else if(matrix.strides[1] == 1) {
+    order = CblasRowMajor;
+  } else {
+    simpleMatVectMul(transpose, matrix, vector, dest);
+    return;
+  }
+
+  cblas_dgemv(order, cblas_trans, matrix.shape[0], matrix.shape[1], 1.0, matrix.data+matrix.initial_offset, matrixStride, vector.data+vector.initial_offset, vectorStride, 0, dest.data+dest.initial_offset, destStride);
+  return;
 }
 
 
