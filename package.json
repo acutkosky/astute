@@ -1,7 +1,7 @@
 {
   "name": "astute",
-  "version": "0.0.1",
-  "main": "src/astute.js",
+  "version": "0.0.2.1",
+  "main": "astute.js",
   "description": "a machine learning and tensor algebra package for node",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
