@@ -499,12 +499,9 @@ void simpleMatMul(Tensor& source1, Tensor& source2, Tensor& dest) {
       double* destCurrent = destData + i*destStrides0 + j*destStrides1;
       *destCurrent = 0;
       for(uint32_t k=0; k<kMax; k++) {
-        *destCurrent = (*source1Current) * (*source2Current);
+        *destCurrent += (*source1Current) * (*source2Current);
         source1Current += source1Strides1;
         source2Current += source2Strides0;
-        destData[i*destStrides0 + j*destStrides1] +=
-          source1Data[i*source1Strides0 + k*source1Strides1]*
-          source2Data[k*source2Strides0 + j*source2Strides1];
       }
     }
   }
@@ -520,6 +517,8 @@ void fastMatMul(Tensor& source1, Tensor& source2, Tensor& dest) {
   } else {
     simpleMatMul(source1, source2, dest);
   }
+
+
 
 
 }
