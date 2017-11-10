@@ -270,12 +270,14 @@ bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToC
   return true;
 }
 
-void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToContract, TensorError* error) {
+void contract(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor& dest, TensorError* error) {
 
   if(dest.numDimensions != 
       source1.numDimensions + source2.numDimensions - 2 * dimsToContract) {
-    *error = DimensionMismatchError;
-    return;
+    if(!(dest.numDimensions == 1 && source1.numDimensions + source2.numDimensions - 2 * dimsToContract == 0 )) {
+      *error = DimensionMismatchError;
+      return;
+    }
   }
 
   if(!compatibleForContraction(source1, source2, dimsToContract)) {
@@ -695,7 +697,7 @@ void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest
 
 
 void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
-  return contract(source1, source2, dest, 1, error);
+  return contract(source1, source2, 1, dest, error);
 }
 
 } //namespace tensor

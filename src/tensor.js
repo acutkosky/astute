@@ -6,9 +6,43 @@ var DimensionType = Uint32Array;
 var DataStorageType = Float64Array;
 var StrideType = Uint32Array;
 
+function parseArrayTensor(data) {
+  if(data !== undefined && !(data instanceof Array)) {
+    data = [data];
+  }
+  var innerData = data;
+  var shape = [];
+  while(innerData instanceof Array) {
+    shape.push(innerData.length);
+    innerData = innerData[0];
+  }
+  return shape;
+}
+
+function flattenArray(data) {
+  if(!(data instanceof Array))
+    return data;
+  var flattened = [];
+  for(let i=0; i<data.length; i++) {
+    flattened = flattened.concat(flattenArray(data[i]));
+  }
+  return flattened;
+}
+
 class Tensor {
   constructor(opts) {
+    if(opts instanceof Array) {
+      opts = {data: opts};
+    }
+    if(!isNaN(opts)) {
+      opts = {data: [opts]};
+    }
     var {shape, numDimensions, strides, initial_offset, data} = opts;
+    if(data !== undefined) {
+      if(shape === undefined)
+        shape = parseArrayTensor(data);
+      data = flattenArray(data);
+    }
     if(shape !== undefined) {
       if(shape instanceof Array) {
         shape = new DimensionType(shape);
@@ -104,6 +138,16 @@ class Tensor {
 }
 exports.Tensor = Tensor;
 
+function sameShape(tensor1, tensor2) {
+  if(tensor1.numDimensions != tensor2.numDimensions)
+    return false;
+  for(let i=0; i<tensor1.numDimensions; i++) {
+    if(tensor1.shape[i] != tensor2.shape[i])
+      return false;
+  }
+  return true;
+}
+exports.sameShape = sameShape;
 
 function print2DTensor(tensor) {
   var strings = [];
@@ -145,6 +189,25 @@ function zerosLike(shape) {
 }
 exports.zerosLike = zerosLike;
 
+function onesLike(shape) {
+  if(shape instanceof Tensor) {
+    shape = shape.shape;
+  }
+  ones = new Tensor({shape});
+  ones.data.fill(1.0);
+  return ones;
+}
+exports.onesLike = onesLike;
+
+function fillLike(value, shape) {
+  if(shape instanceof Tensor) {
+    shape = shape.shape;
+  }
+  ones = new Tensor({shape});
+  ones.data.fill(value);
+  return ones;
+}
+exports.onesLike = onesLike;
 
 function broadcastShape(tensor1, tensor2) {
   var numDimensions = Math.max(tensor1.numDimensions, tensor2.numDimensions);
@@ -171,10 +234,12 @@ function contract(source1, source2, dimsToContract, dest) {
     for(let dim of source2.shape.slice(dimsToContract)) {
       shape.push(dim);
     }
+    if(shape.length === 0)
+      shape = [1];
+  
     dest = new Tensor({shape});
   }
-
-  nodetensor.contract(source1, source2, dest, dimsToContract);
+  nodetensor.contract(source1, source2, dimsToContract,dest);
   return dest;
 }
 exports.contract = contract;
@@ -200,7 +265,6 @@ function addScale(source1, source2, scale1, scale2, dest) {
   if(dest === undefined)
     dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
   dest = numberToTensor(dest);
-
   nodetensor.addScale(source1, source2, scale1, scale2, dest);
   return dest;
 }

@@ -14,6 +14,9 @@ class Variable {
   }
 
   backward(derivative) {
+    // console.log(derivative);
+    // if(derivative!== null)
+    //   console.log("back derivative: ",derivative.data);
     if(this.grad === null) {
       this.grad = derivative;
     } else {
