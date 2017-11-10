@@ -1,9 +1,9 @@
 # astute
 a machine learning and tensor algebra package for node
 
-This package requires BLAS to function. If you're on a mac it should be already present.
+This package requires BLAS to function. If you're on a mac it should be already present. Otherwise you'll need to find an installation.
 
-Tensor Algebra:
+### Tensor Algebra:
 
 Declare a new tensor:
 ```
@@ -48,4 +48,31 @@ var mm = astute.matMul(matrix1, matrix2);
 var mv = matrix2.matMul(vector);
 ```
 When possible, operations are performed using BLAS.
+
+### Automatic Differentation:
+`astute.autograd` contains procedures for automatic differentation. It's modeled after Pytorch's module of the same name. Here's a bare-bones example:
+```
+var astute = require('astute');
+
+var {tensor, autograd} = astute;
+
+var eta = 0.1;
+var x = new autograd.Variable(10);
+var y = new autograd.Variable(3);
+
+for(let t=1; t<100; t++) {
+  //loss = ( <x,y> - 6 )^2
+  loss = x.dot(y).sub(6).square();
+
+  //compute gradients
+  loss.zeroGrad();
+  loss.backward(1.0);
+  //x.data is a Tensor object containing the current value of x.
+  //x.grad is a Tensor object that now contains the value of dloss/dx.
+  
+  //manual implementation of a gradient descent update:
+  //x.data = 1.0*x.data + (-eta/sqrt(t))*x.grad;
+  x.data = tensor.addScale(x.data, x.grad, 1.0, -eta/Math.sqrt(t));
+}
+```
 
