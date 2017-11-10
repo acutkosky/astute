@@ -38,14 +38,22 @@ exports.Variable = Variable;
 
 
 //base class for operations
-class Operation extends Function {
+class Operation {
 
   constructor() {
-    super('return this.forwardWrapper.apply(this, arguments);');
+    var applyOp = function() {
+      return this.forwardWrapper.apply(this, arguments);
+    }.bind(this);
+
     this.savedData = {};
     this.child = null;
     this.parents = [];
-    return this.bind(this);
+
+    for(let key in this) {
+      applyOp[key] = this[key];
+    }
+
+    return applyOp;
   }
 
   saveForBackward(info) {
