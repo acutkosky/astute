@@ -381,7 +381,7 @@ bool identicalLayout(Tensor& tensor1, Tensor& tensor2) {
   return true;
 }
 
-void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error) {
+void addScale(Tensor& source1, Tensor& source2, double scale1, double scale2, Tensor& dest, TensorError* error) {
   if(!compatibleDimensions(source1, source2)) {
     *error = DimensionMismatchError;
     return;
@@ -392,7 +392,7 @@ void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, dou
   }
 
   if(identicalLayout(dest, source1) && identicalLayout(dest, source2) && isDense(dest)) {
-    denseAddScale(source1, source2, dest, scale1, scale2);
+    denseAddScale(source1, source2, scale1, scale2, dest);
     return;
   }
 
@@ -407,7 +407,7 @@ void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, dou
 
 }
 
-void denseAddScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2) {
+void denseAddScale(Tensor& source1, Tensor& source2, double scale1, double scale2, Tensor& dest) {
   uint32_t totalSize = source1.totalSize();
   double* source1Iterator = source1.data + source1.initial_offset;
   double* source2Iterator = source2.data + source2.initial_offset;
@@ -420,7 +420,7 @@ void denseAddScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1
   }
 }
 
-void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error) {
+void multiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error) {
   if(!compatibleDimensions(source1, source2)) {
     *error = DimensionMismatchError;
     return;
@@ -431,7 +431,7 @@ void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale,
   }
 
   if(identicalLayout(dest, source1) && identicalLayout(dest, source2) && isDense(dest)) {
-    denseMultiplyScale(source1, source2, dest, scale);
+    denseMultiplyScale(source1, source2, scale, dest);
     return;
   }
 
@@ -447,7 +447,7 @@ void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale,
 
 }
 
-void denseMultiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale) {
+void denseMultiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest) {
   uint32_t totalSize = source1.totalSize();
   double* source1Iterator = source1.data + source1.initial_offset;
   double* source2Iterator = source2.data + source2.initial_offset;
@@ -460,7 +460,7 @@ void denseMultiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double s
   }
 }
 
-void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error) {
+void divideScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error) {
   if(!compatibleDimensions(source1, source2)) {
     *error = DimensionMismatchError;
     return;
@@ -471,7 +471,7 @@ void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, T
   }
 
   if(identicalLayout(dest, source1) && identicalLayout(dest, source2) && isDense(dest)) {
-    denseDivideScale(source1, source2, dest, scale);
+    denseDivideScale(source1, source2, scale, dest);
     return;
   }
 
@@ -487,7 +487,7 @@ void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, T
 
 }
 
-void denseDivideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale) {
+void denseDivideScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest) {
   uint32_t totalSize = source1.totalSize();
   double* source1Iterator = source1.data + source1.initial_offset;
   double* source2Iterator = source2.data + source2.initial_offset;
@@ -500,25 +500,14 @@ void denseDivideScale(Tensor& source1, Tensor& source2, Tensor& dest, double sca
   }
 }
 
-void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
-  return addScale(source1, source2, dest, 1, 1, error);
-}
-
-void subtract(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
-  return addScale(source1, source2, dest, 1, -1, error);
-}
-
-void multiply(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
-  return multiplyScale(source1, source2, dest, 1, error);
-}
-
-void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
-  return divideScale(source1, source2, dest, 1, error);
-}
-
-void scale(Tensor& source, Tensor& dest, double scale, TensorError* error) {
+void scale(Tensor& source, double scale, Tensor& dest, TensorError* error) {
   if(!matchedDimensions(source, dest)) {
     *error = DimensionMismatchError;
+    return;
+  }
+
+  if(identicalLayout(dest, source) && isDense(dest)) {
+    denseScale(source, scale, dest);
     return;
   }
 
@@ -528,6 +517,33 @@ void scale(Tensor& source, Tensor& dest, double scale, TensorError* error) {
     dest.at(currentCoords) = 
       scale * source.at(currentCoords);
   } while(destIterator.next());
+}
+
+void denseScale(Tensor& source, double scale, Tensor& dest) {
+  uint32_t totalSize = source.totalSize();
+  double* sourceIterator = source.data + source.initial_offset;
+  double* destIterator = dest.data + dest.initial_offset;
+  for(uint32_t i = 0; i<totalSize; i++) {
+    *destIterator = scale * (*sourceIterator);
+    destIterator++;
+    sourceIterator++;
+  }
+}
+
+void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+  return addScale(source1, source2, 1, 1, dest, error);
+}
+
+void subtract(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+  return addScale(source1, source2, 1, -1, dest, error);
+}
+
+void multiply(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+  return multiplyScale(source1, source2, 1, dest, error);
+}
+
+void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+  return divideScale(source1, source2, 1, dest, error);
 }
 
 bool isDense(Tensor& source) {

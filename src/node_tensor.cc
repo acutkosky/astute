@@ -248,20 +248,20 @@ void contract(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 4) {
     // Throw an Error that is passed back to JavaScript
     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, dest, dimsToContract")));
+        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, dimsToContract, dest")));
     return;
   }
 
   Tensor source1 = cTensorFromJSTensor(isolate, args[0]);
   Tensor source2 = cTensorFromJSTensor(isolate, args[1]);
-  Tensor dest = cTensorFromJSTensor(isolate, args[2]);
+  Tensor dest = cTensorFromJSTensor(isolate, args[3]);
 
-  if(!args[3]->IsUint32()) {
+  if(!args[2]->IsUint32()) {
     isolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(isolate, "dimsToContract must be a positive integer")));
     return;
   }
-  uint32_t dimsToContract = args[3]->Uint32Value();
+  uint32_t dimsToContract = args[2]->Uint32Value();
 
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
@@ -270,7 +270,7 @@ void contract(const FunctionCallbackInfo<Value>& args) {
 
   TensorError error = tensor::NoError;
 
-  tensor::contract(source1, source2, dest, dimsToContract, &error);
+  tensor::contract(source1, source2, dimsToContract, dest, &error);
 
   if(error != tensor::NoError) {
     std::string errorString = std::string("Error in tensor contraction: ") + makeErrorString(error);
@@ -381,34 +381,34 @@ void addScale(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 5) {
     // Throw an Error that is passed back to JavaScript
     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, dest, scale1, scale2")));
+        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, scale1, scale2, dest")));
     return;
   }
 
   Tensor source1 = cTensorFromJSTensor(isolate, args[0]);
   Tensor source2 = cTensorFromJSTensor(isolate, args[1]);
-  Tensor dest = cTensorFromJSTensor(isolate, args[2]);
+  Tensor dest = cTensorFromJSTensor(isolate, args[4]);
 
-  if(!args[3]->IsNumber()) {
+  if(!args[2]->IsNumber()) {
     isolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(isolate, "scale1 must be a number")));
     return;
   }
-  double scale1 = args[3]->NumberValue();
+  double scale1 = args[2]->NumberValue();
 
-  if(!args[4]->IsNumber()) {
+  if(!args[3]->IsNumber()) {
     isolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(isolate, "scale2 must be a number")));
     return;
   }
-  double scale2 = args[4]->NumberValue();
+  double scale2 = args[3]->NumberValue();
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
     return;   
   }
 
   TensorError error = tensor::NoError;
-  tensor::addScale(source1, source2, dest, scale1, scale2, &error);
+  tensor::addScale(source1, source2, scale1, scale2, dest, &error);
 
   if(error != tensor::NoError) {
     std::string errorString = std::string("Error in addScale: ") + makeErrorString(error);
@@ -424,27 +424,27 @@ void multiplyScale(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 4) {
     // Throw an Error that is passed back to JavaScript
     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, dest, scale")));
+        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, scale, dest")));
     return;
   }
 
   Tensor source1 = cTensorFromJSTensor(isolate, args[0]);
   Tensor source2 = cTensorFromJSTensor(isolate, args[1]);
-  Tensor dest = cTensorFromJSTensor(isolate, args[2]);
+  Tensor dest = cTensorFromJSTensor(isolate, args[3]);
 
-  if(!args[3]->IsNumber()) {
+  if(!args[2]->IsNumber()) {
     isolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(isolate, "scale must be a number")));
     return;
   }
-  double scale = args[3]->NumberValue();
+  double scale = args[2]->NumberValue();
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
     return;   
   }
 
   TensorError error = tensor::NoError;
-  tensor::multiplyScale(source1, source2, dest, scale, &error);
+  tensor::multiplyScale(source1, source2, scale, dest, &error);
 
   if(error != tensor::NoError) {
     std::string errorString = std::string("Error in multiplyScale: ") + makeErrorString(error);
@@ -460,27 +460,27 @@ void divideScale(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 4) {
     // Throw an Error that is passed back to JavaScript
     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, dest, scale")));
+        String::NewFromUtf8(isolate, "Requires 4 arguments: source1, source2, scale, dest")));
     return;
   }
 
   Tensor source1 = cTensorFromJSTensor(isolate, args[0]);
   Tensor source2 = cTensorFromJSTensor(isolate, args[1]);
-  Tensor dest = cTensorFromJSTensor(isolate, args[2]);
+  Tensor dest = cTensorFromJSTensor(isolate, args[3]);
 
-  if(!args[3]->IsNumber()) {
+  if(!args[2]->IsNumber()) {
     isolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(isolate, "scale must be a number")));
     return;
   }
-  double scale = args[3]->NumberValue();
+  double scale = args[2]->NumberValue();
 
   if(!source1.isValid() || !source2.isValid() || !dest.isValid()) {
     return;   
   }
 
   TensorError error = tensor::NoError;
-  tensor::divideScale(source1, source2, dest, scale, &error);
+  tensor::divideScale(source1, source2, scale, dest, &error);
 
   if(error != tensor::NoError) {
     std::string errorString = std::string("Error in divideScale: ") + makeErrorString(error);
@@ -497,26 +497,26 @@ void scale(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 3) {
     // Throw an Error that is passed back to JavaScript
     isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Requires 3 arguments: source, dest, scale")));
+        String::NewFromUtf8(isolate, "Requires 3 arguments: source, scale, dest")));
     return;
   }
 
   Tensor source = cTensorFromJSTensor(isolate, args[0]);
-  Tensor dest = cTensorFromJSTensor(isolate, args[1]);
+  Tensor dest = cTensorFromJSTensor(isolate, args[2]);
 
-  if(!args[2]->IsNumber()) {
+  if(!args[1]->IsNumber()) {
     isolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(isolate, "scale must be a number")));
     return;
   }
-  double scale = args[2]->NumberValue();
+  double scale = args[1]->NumberValue();
 
   if(!source.isValid() || !dest.isValid()) {
     return;   
   }
 
   TensorError error = tensor::NoError;
-  tensor::scale(source, dest, scale, &error);
+  tensor::scale(source, scale, dest, &error);
 
   if(error != tensor::NoError) {
     std::string errorString = std::string("Error in scale: ") + makeErrorString(error);

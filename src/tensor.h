@@ -108,7 +108,7 @@ struct MultiIndexIterator {
   uint32_t* get(void);
 };
 
-void contract(Tensor& source1, Tensor& source2, Tensor& dest, uint32_t dimsToContract, TensorError* error=&globalError);
+void contract(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor& dest, TensorError* error=&globalError);
 
 double scalarProduct(Tensor& t1, Tensor& t2, TensorError* error=&globalError);
 
@@ -122,17 +122,17 @@ bool isBroadcastDimension(Tensor& source1, Tensor& source2, Tensor& dest);
 
 void transpose(Tensor& source, Tensor& dest, TensorError* error=&globalError);
 
-void addScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2, TensorError* error=&globalError);
+void addScale(Tensor& source1, Tensor& source2, double scale1, double scale2, Tensor& dest, TensorError* error=&globalError);
 
-void multiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error=&globalError);
+void multiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error=&globalError);
 
-void divideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale, TensorError* error=&globalError);
+void divideScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest, TensorError* error=&globalError);
 
-void denseAddScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale1, double scale2);
+void denseAddScale(Tensor& source1, Tensor& source2, double scale1, double scale2, Tensor& dest);
 
-void denseMultiplyScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale);
+void denseMultiplyScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest);
 
-void denseDivideScale(Tensor& source1, Tensor& source2, Tensor& dest, double scale);
+void denseDivideScale(Tensor& source1, Tensor& source2, double scale, Tensor& dest);
 
 void add(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
@@ -142,7 +142,9 @@ void multiply(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error
 
 void divide(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 
-void scale(Tensor& source, Tensor& dest, double scale, TensorError* error=&globalError);
+void scale(Tensor& source, double scale, Tensor& dest, TensorError* error=&globalError);
+
+void denseScale(Tensor& source, double scale, Tensor& dest);
 
 void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error=&globalError);
 

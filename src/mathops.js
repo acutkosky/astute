@@ -6,6 +6,7 @@ function exportOp(opname) {
     source = tensor.numberToTensor(source);
     if(dest === undefined)
       dest = tensor.zerosLike(source);
+    dest = tensor.numberToTensor(dest);
 
     nodetensor[opname](source, dest);
 
@@ -21,6 +22,7 @@ function exportBinaryOp(opname) {
     source2 = tensor.numberToTensor(source2);
     if(dest === undefined)
       dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
+    dest = tensor.numberToTensor(dest);
 
     nodetensor[opname](source1, source2, dest);
 

@@ -1,4 +1,4 @@
-/*jshint esversion: 6 */
+/* jshint esversion: 6 */
 
 var nodetensor = require('../build/Release/tensorBinding');
 
@@ -147,7 +147,7 @@ exports.zerosLike = zerosLike;
 
 
 function broadcastShape(tensor1, tensor2) {
-  var numDimensions = max(tensor1.numDimensions, tensor2.numDimensions);
+  var numDimensions = Math.max(tensor1.numDimensions, tensor2.numDimensions);
   var shape = new DimensionType(numDimensions);
   for(let i=0; i<numDimensions; i++) {
     if(i>=tensor1.numDimensions)
@@ -155,7 +155,7 @@ function broadcastShape(tensor1, tensor2) {
     else if(i>=tensor2.numDimensions)
       shape[numDimensions - i -1] = tensor1.shape[i];
     else
-      shape[numDimensions - i -1] = max(tensor1.shape[i], tensor2.shape[i]);
+      shape[numDimensions - i -1] = Math.max(tensor1.shape[i], tensor2.shape[i]);
   }
   return shape;
 }
@@ -194,4 +194,47 @@ function numberToTensor(number) {
 }
 exports.numberToTensor = numberToTensor;
 
+function addScale(source1, source2, scale1, scale2, dest) {
+  source1 = numberToTensor(source1);
+  source2 = numberToTensor(source2);
+  if(dest === undefined)
+    dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
+  dest = numberToTensor(dest);
+
+  nodetensor.addScale(source1, source2, scale1, scale2, dest);
+  return dest;
+}
+exports.addScale = addScale;
+
+function multiplyScale(source1, source2, scale, dest) {
+  source1 = numberToTensor(source1);
+  source2 = numberToTensor(source2);
+  if(dest === undefined)
+    dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
+  dest = numberToTensor(dest);
+
+  nodetensor.multiplyScale(source1, source2, scale, dest);
+  return dest;
+}
+exports.multiplyScale = multiplyScale;
+
+function divideScale(source1, source2, scale, dest) {
+  source1 = numberToTensor(source1);
+  source2 = numberToTensor(source2);
+  if(dest === undefined)
+    dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
+  dest = numberToTensor(dest);
+
+  nodetensor.divideScale(source1, source2, scale, dest);
+  return dest;
+}
+exports.divideScale = divideScale;
+
+function scale(source, scale, dest) {
+  source = numberToTensor(source);
+  if(dest === undefined)
+    dest = tensor.zerosLike(source);
+  nodetensor.scale(source, scale, dest);
+}
+exports.scale = scale;
 
