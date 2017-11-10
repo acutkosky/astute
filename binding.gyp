@@ -3,7 +3,7 @@
     {
       "target_name": "tensorBinding",
       "sources": [
-        "src/node_tensor.cc",
+        "src/tensorBinding.cc",
         "src/tensor.cc",
         "src/mathops.cc"
         ],

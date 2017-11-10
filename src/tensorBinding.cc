@@ -4,8 +4,6 @@
 #include <iostream>
 #include <string>
 
-    // isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "invalid Tensor data")));
-
 #define GET_CONTENTS(view) \
 (static_cast<unsigned char*>(view->Buffer()->GetContents().Data()) + view->ByteOffset())
 
@@ -34,6 +32,7 @@ void name(const FunctionCallbackInfo<Value>& args) { \
   } \
 }
 //end CREATE_OP definition
+
 #define CREATE_BINARY_OP(name) void name(const FunctionCallbackInfo<Value>& args) { \
   Isolate* isolate = args.GetIsolate(); \
   if(args.Length() < 3) { \
@@ -57,7 +56,7 @@ void name(const FunctionCallbackInfo<Value>& args) { \
     return; \
   } \
 }
-//end of CREATE_BINARY_OP definition
+//end CREATE_BINARY_OP definition
 
 #define DECLARE_OP(name) NODE_SET_METHOD(exports, #name, name);
 #define DECLARE_BINARY_OP(name) NODE_SET_METHOD(exports, #name, name);
