@@ -12,5 +12,8 @@
   },
   "author": "Ashok Cutkosky",
   "license": "ISC",
-  "gypfile": true
+  "gypfile": true,
+  "devDependencies": {
+    "mocha": "^4.0.1"
+  }
 }

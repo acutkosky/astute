@@ -92,6 +92,8 @@ class Tensor {
   }
 
   at(coords) {
+    if(!(coords instanceof Array))
+      coords = [...arguments];
     var offset = this.initial_offset;
     for(let i=0; i<this.numDimensions; i++) {
       if(coords[i] >= this.shape[i] || coords[i]<0) {
@@ -135,8 +137,22 @@ class Tensor {
     return matMul(this, otherTensor, dest);
   }
 
+  transpose() {
+    return transpose(this);
+  }
+
 }
 exports.Tensor = Tensor;
+
+function transpose(tensor) {
+  var shape = tensor.shape.slice(0).reverse();
+  var strides = tensor.strides.slice(0).reverse();
+  var initial_offset = tensor.initial_offset;
+  var data = tensor.data;
+  var numDimensions = tensor.numDimensions;
+  var T = new Tensor({shape, strides, initial_offset, data, numDimensions});
+  return T;
+}
 
 function sameShape(tensor1, tensor2) {
   if(tensor1.numDimensions != tensor2.numDimensions)

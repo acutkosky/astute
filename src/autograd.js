@@ -3,20 +3,23 @@ var tensor = require('./tensor');
 
 
 class Variable {
-  constructor(data, stopGrad=false) {
+  constructor(data, opts) {
+    var {stopGrad, requiresGrad} = opts || {stopGrad: false, 
+                                            requiresGrad: true};
     if(!(data instanceof tensor.Tensor))
       data = new tensor.Tensor(data);
     this.data = data;
     this.grad = null;
     this.parent = null;
     this.stopGrad = stopGrad;
+    this.requiresGrad = true;
     this.children = [];
   }
 
   backward(derivative) {
-    // console.log(derivative);
-    // if(derivative!== null)
-    //   console.log("back derivative: ",derivative.data);
+    if(derivative === undefined) {
+      derivative = 1.0;
+    }
     if(this.grad === null) {
       this.grad = derivative;
     } else {
@@ -83,12 +86,18 @@ class Operation {
   }
 
   backwardWrapper(outputDerivative) {
-    var inputDerivatives = this.backward(outputDerivative);
-    if(!(inputDerivatives instanceof Array) && this.parents.length == 1) {
-      inputDerivatives = [inputDerivatives];
+    var inputDerivatives = [];
+    for(let i=0; i<this.parents.length; i++) {
+      if(this.parents[i].requiresGrad) {
+        inputDerivatives.push(this.backward(outputDerivative, i));
+      }
     }
-    for(let i = 0; i<this.parents.length; i++)
-      this.parents[i].backward(inputDerivatives[i]);
+
+    for(let i = 0; i<this.parents.length; i++) {
+      if(this.parents[i].requiresGrad) {
+        this.parents[i].backward(inputDerivatives[i]);
+      }
+    }
   }
 
   zeroGrad() {
@@ -106,15 +115,17 @@ class Operation {
   }
 
   /**
-    * takes a single tensor argument representing
-    * the derivative of the final output with respect
+    * outputDerivative: a tensor argument representing
+    * the derivative of the final loss with respect
     * to the output of this operation.
-    * should return an array of tensors corresponding to the
-    * arguments to this.forward. The ith element of this array
-    * is the derivative of the final output with respect to the
-    * ith input to this.forward.
+    * argIndex: an integer between 0 and N-1 where N is th number
+    * of input arguments to this.forward. argIndex specifies 
+    * which input variable we should return the derivative for.
+    * 
+    * Should return a tensor corresponding to the derivative of
+    * the loss with respect to the argIndex'th input to this.forward.
     */
-  backward(outputDerivative) {
+  backward(outputDerivative, argIndex) {
     throw 'Backward Not Implemented!';
   }
 }

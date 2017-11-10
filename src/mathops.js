@@ -52,6 +52,7 @@ exportOp('erf');
 exportOp('floor');
 exportOp('ceil');
 exportOp('round');
+exportOp('sign');
 
 exportBinaryOp('exp');
 exportBinaryOp('fmod');

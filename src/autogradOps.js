@@ -14,8 +14,8 @@ class Add extends autograd.Operation {
     return tensor.addScale(x.data, y.data, 1, 1);
   }
 
-  backward(outputDerivative) {
-    return [outputDerivative, outputDerivative];
+  backward(outputDerivative, argIndex) {
+    return outputDerivative;
   }
 }
 exports.Add = Add;
@@ -34,8 +34,13 @@ class Sub extends autograd.Operation {
     return tensor.addScale(x.data, y.data, 1, -1);
   }
 
-  backward(outputDerivative) {
-    return [outputDerivative, tensor.scale(outputDerivative, -1)];
+  backward(outputDerivative, argIndex) {
+    switch(argIndex) {
+      case 0:
+        return outputDerivative;
+      case 1:
+        return tensor.scale(outputDerivative, -1);
+    }
   }
 }
 exports.Sub = Sub;
@@ -54,9 +59,14 @@ class Mul extends autograd.Operation {
     return tensor.multiplyScale(x.data, y.data, 1);
   }
 
-  backward(outputDerivative) {
+  backward(outputDerivative, argIndex) {
     var [ydata, xdata] = this.getSavedData();
-    return [tensor.multiplyScale(outputDerivative, ydata, 1), tensor.multiplyScale(outputDerivative, xdata, 1)];
+    switch(argIndex) {
+      case 0:
+        return tensor.multiplyScale(outputDerivative, ydata, 1);
+      case 1:
+        return tensor.multiplyScale(outputDerivative, xdata, 1);
+    }
   }
 }
 exports.Mul = Mul;
@@ -75,9 +85,14 @@ class Div extends autograd.Operation {
     return tensor.divideScale(x.data, y.data, 1);
   }
 
-  backward(outputDerivative) {
+  backward(outputDerivative, argIndex) {
     var [ydata, xdata] = this.getSavedData();
-    return [tensor.divideScale(outputDerivative, ydata, 1), tensor.divideScale(outputDerivative, xdata, 1)];
+    switch(argIndex) {
+      case 0:
+        return tensor.divideScale(outputDerivative, ydata, 1);
+      case 1:
+        return tensor.divideScale(outputDerivative, xdata, 1);
+    }
   }
 }
 exports.Div = Div;
@@ -97,7 +112,7 @@ class Scale extends autograd.Operation {
     return tensor.scale(v.data, this.x);
   }
 
-  backward(outputDerivative) {
+  backward(outputDerivative, argIndex) {
     return tensor.scale(outputDerivative, this.x);
   }
 }
@@ -118,7 +133,7 @@ class AddScalar extends autograd.Operation {
     return tensor.addScale(v.data, this.x, 1);
   }
 
-  backward(outputDerivative) {
+  backward(outputDerivative, argIndex) {
     return outputDerivative;
   }
 }
@@ -137,15 +152,14 @@ class Dot extends autograd.Operation {
     return tensor.matMul(x.data , y.data);
   }
 
-  backward(outputDerivative) {
+  backward(outputDerivative, argIndex) {
     var [xdata , ydata] = this.getSavedData();
-    var Dx = null;
-    var Dy = null;
-    if(!this.parents[0].stopGrad)
-      Dx = tensor.multiplyScale(ydata, outputDerivative, 1);
-    if(!this.parents[1].stopGrad)
-      Dy = tensor.multiplyScale(xdata, outputDerivative, 1);
-    return [Dx, Dy];
+    switch(argIndex) {
+      case 0:
+        return tensor.multiplyScale(ydata, outputDerivative, 1);
+      case 1:
+        return tensor.multiplyScale(xdata, outputDerivative, 1);
+    }
   }
 }
 exports.Dot = Dot;
@@ -175,3 +189,143 @@ function square(x) {
 }
 exports.square = square;
 exports.utilityFuncs.push(square);
+
+
+class Exp extends autograd.Operation {
+
+  forward(x) {
+    var expX = mathops.exp(x.data);
+    this.saveForBackward(expX);
+    return expX;
+  }
+
+  backward(outputDerivative, argIndex) {
+    var expX = this.getSavedData();
+    return mathops.multiplyScale(outputDerivative, expX, 1);
+  }
+}
+exports.Exp = Exp;
+
+function exp(x) {
+  return (new Exp())(x);
+}
+exports.exp = exp;
+exports.utilityFuncs.push(exp);
+
+class Sqrt extends autograd.Operation {
+
+  forward(x) {
+    var sqrtX = mathops.sqrt(x.data);
+    this.saveForBackward(sqrtX);
+    return sqrtX;
+  }
+
+  backward(outputDerivative, argIndex) {
+    var sqrtX = this.getSavedData();
+    return mathops.divideScale(outputDerivative, sqrtX, 0.5);
+  }
+}
+exports.Sqrt = Sqrt;
+
+function sqrt(x) {
+  return (new Exp())(x);
+}
+exports.sqrt = sqrt;
+exports.utilityFuncs.push(sqrt);
+
+class Sin extends autograd.Operation {
+
+  forward(x) {
+    var X = x.data;
+    this.saveForBackward(X);
+    return mathops.sin(x.data);
+  }
+
+  backward(outputDerivative, argIndex) {
+    var X = this.getSavedData();
+    return mathops.multiplyScale(outputDerivative, mathops.cos(X), 1);
+  }
+}
+exports.Sin = Sin;
+
+function sin(x) {
+  return (new Sin())(x);
+}
+exports.sin = sin;
+exports.utilityFuncs.push(sin);
+
+
+class Cos extends autograd.Operation {
+
+  forward(x) {
+    var X = x.data;
+    this.saveForBackward(X);
+    return mathops.cos(x.data);
+  }
+
+  backward(outputDerivative, argIndex) {
+    var X = this.getSavedData();
+    return mathops.multiplyScale(outputDerivative, mathops.sin(X), -1);
+  }
+}
+exports.Cos = Cos;
+
+function cos(x) {
+  return (new Cos())(x);
+}
+exports.cos = cos;
+exports.utilityFuncs.push(cos);
+
+class Tan extends autograd.Operation {
+
+  forward(x) {
+    var tanX = mathops.tan(x.data);
+    this.saveForBackward(tanX);
+    return tanX;
+  }
+
+  backward(outputDerivative, argIndex) {
+    var tanX = this.getSavedData();
+
+    tanXsquared = mathops.multiplyScale(tanX, tanX, 1);
+    //re-use the storage of tanXsquared for the derivative.
+    secXsquared = mathops.addScale(tanXsquared, 1, 1, tanXsquared);
+    derivative = mathops.multiplyScale(outputDerivative,
+                                       secXsquared,
+                                       1,
+                                       secXsquared);
+    return derivative;
+  }
+}
+exports.Tan = Tan;
+
+function tan(x) {
+  return (new Tan())(x);
+}
+exports.tan = tan;
+exports.utilityFuncs.push(tan);
+
+
+// exportOp('abs');
+// exportOp('sqrt');
+// exportOp('sin');
+// exportOp('cos');
+// exportOp('tan');
+// exportOp('sinh');
+// exportOp('cosh');
+// exportOp('tanh');
+// exportOp('log');
+// exportOp('atan');
+// exportOp('acos');
+// exportOp('asin');
+// exportOp('atanh');
+// exportOp('acosh');
+// exportOp('asinh');
+// exportOp('erf');
+// exportOp('floor');
+// exportOp('ceil');
+// exportOp('round');
+
+// exportBinaryOp('exp');
+// exportBinaryOp('fmod');
+

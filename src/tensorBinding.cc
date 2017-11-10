@@ -589,6 +589,7 @@ void init(Local<Object> exports) {
   DECLARE_OP(floor)
   DECLARE_OP(ceil)
   DECLARE_OP(round)
+  DECLARE_OP(sign)
 
   DECLARE_BINARY_OP(pow)
   DECLARE_BINARY_OP(fmod)

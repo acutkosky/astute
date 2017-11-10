@@ -50,6 +50,23 @@ void apply(double(*func)(double), Tensor& source, Tensor& dest, TensorError* err
   } while(destIterator.next());
 }
 
+void sign(Tensor& source, Tensor& dest, TensorError* error) {
+  if(!matchedDimensions(source, dest)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
+  do {
+    uint32_t* currentCoords = destIterator.get();
+    double sourceVal = source.at(currentCoords);
+    if(sourceVal == 0)
+      dest.at(currentCoords) = 0;
+    else
+      dest.at(currentCoords) = sourceVal>0?1.0:-1;
+  } while(destIterator.next());
+}
+
+
 CREATE_OP(exp)
 CREATE_OP(abs)
 CREATE_OP(sqrt)
