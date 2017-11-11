@@ -647,7 +647,7 @@ void Method(const FunctionCallbackInfo<Value>& args) {
 }
 
 void init(Local<Object> exports) {
-  // tensor::seed_generator();
+  tensor::seed_generator();
 
   NODE_SET_METHOD(exports, "hello", Method);
   NODE_SET_METHOD(exports, "contract", contract);
