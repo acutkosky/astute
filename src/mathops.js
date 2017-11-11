@@ -54,5 +54,5 @@ exportOp('ceil');
 exportOp('round');
 exportOp('sign');
 
-exportBinaryOp('exp');
+exportBinaryOp('pow');
 exportBinaryOp('fmod');

@@ -2,6 +2,7 @@
 #include "tensor.h"
 #include "mathops.h"
 #include <iostream>
+#include <random>
 #include <string>
 
 #define GET_CONTENTS(view) \
@@ -525,6 +526,91 @@ void scale(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
+void fillNormal(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  // Check the number of arguments passed.
+  if (args.Length() < 3) {
+    // Throw an Error that is passed back to JavaScript
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Requires 3 arguments: mean, stdDev, dest")));
+    return;
+  }
+
+  Tensor dest = cTensorFromJSTensor(isolate, args[2]);
+  if(!dest.isValid())
+    return;
+
+  if(!args[0]->IsNumber()) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "mean must be a number")));
+    return;
+  }
+  double mean = args[0]->NumberValue();
+
+  if(!args[1]->IsNumber()) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "stdDev must be a number")));
+    return;
+  }
+  double stdDev = args[1]->NumberValue();
+
+  tensor::fillNormal(mean, stdDev, dest);
+
+  return;
+}
+
+void fillUniform(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  // Check the number of arguments passed.
+  if (args.Length() < 3) {
+    // Throw an Error that is passed back to JavaScript
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Requires 3 arguments: low, high, dest")));
+    return;
+  }
+
+  Tensor dest = cTensorFromJSTensor(isolate, args[2]);
+  if(!dest.isValid())
+    return;
+
+  if(!args[0]->IsNumber()) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "low must be a number")));
+    return;
+  }
+  double low = args[0]->NumberValue();
+
+  if(!args[1]->IsNumber()) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "high must be a number")));
+    return;
+  }
+  double high = args[1]->NumberValue();
+
+  tensor::fillUniform(low, high, dest);
+
+  return;
+}
+
+void sum(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  // Check the number of arguments passed.
+  if (args.Length() < 1) {
+    // Throw an Error that is passed back to JavaScript
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Requires 1 arguments: tensor")));
+    return;
+  }
+
+  Tensor source = cTensorFromJSTensor(isolate, args[0]);
+  if(!source.isValid())
+    return;
+  double answer = tensor::sum(source);
+  args.GetReturnValue().Set(Number::New(isolate, answer));
+
+  return;
+}
+
 CREATE_OP(exp)
 CREATE_OP(abs)
 CREATE_OP(sqrt)
@@ -545,6 +631,7 @@ CREATE_OP(erf)
 CREATE_OP(floor)
 CREATE_OP(ceil)
 CREATE_OP(round)
+CREATE_OP(sign)
 
 CREATE_BINARY_OP(pow)
 CREATE_BINARY_OP(fmod)
@@ -560,6 +647,8 @@ void Method(const FunctionCallbackInfo<Value>& args) {
 }
 
 void init(Local<Object> exports) {
+  // tensor::seed_generator();
+
   NODE_SET_METHOD(exports, "hello", Method);
   NODE_SET_METHOD(exports, "contract", contract);
   NODE_SET_METHOD(exports, "scalarProduct", scalarProduct);
@@ -568,6 +657,9 @@ void init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "multiplyScale", multiplyScale);
   NODE_SET_METHOD(exports, "divideScale", divideScale);
   NODE_SET_METHOD(exports, "scale", scale);
+  NODE_SET_METHOD(exports, "fillNormal", fillNormal);
+  NODE_SET_METHOD(exports, "fillUniform", fillUniform);
+  NODE_SET_METHOD(exports, "sum", sum);
 
   DECLARE_OP(exp)
   DECLARE_OP(abs)

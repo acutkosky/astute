@@ -77,7 +77,7 @@ class Operation {
       arg.children.push(this);
       this.parents.push(arg);
     }
-    var output = this.forward.apply(this, arguments);
+    var output = this.forward(...arguments);
     if(!(output instanceof Variable))
       output = new Variable(output);
     output.parent = this;
@@ -130,3 +130,5 @@ class Operation {
   }
 }
 exports.Operation = Operation;
+
+

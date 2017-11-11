@@ -23,7 +23,7 @@ for (let key in mathops) {
 
 exports.autograd = autograd;
 for (let key in autogradOps) {
-  if(key instanceof Function) {
+  if(autogradOps[key] instanceof Function) {
     exports.autograd[key] = autogradOps[key];
   }
 
@@ -33,3 +33,4 @@ for (let i=0; i<autogradOps.utilityFuncs.length; i++) {
   let func = autogradOps.utilityFuncs[i];
   autograd.Variable.prototype[func.name] = firstArgisThis(func);
 }
+

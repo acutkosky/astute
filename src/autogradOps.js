@@ -91,7 +91,9 @@ class Div extends autograd.Operation {
       case 0:
         return tensor.divideScale(outputDerivative, ydata, 1);
       case 1:
-        return tensor.divideScale(outputDerivative, xdata, 1);
+        var answer_holder = tensor.multiplyScale(ydata, ydata, 1);
+        var divided = tensor.divideScale(outputDerivative, answer_holder, -1, answer_holder);
+        return tensor.multiplyScale(answer_holder, xdata, 1, answer_holder);
     }
   }
 }
@@ -201,7 +203,7 @@ class Exp extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var expX = this.getSavedData();
-    return mathops.multiplyScale(outputDerivative, expX, 1);
+    return tensor.multiplyScale(outputDerivative, expX, 1);
   }
 }
 exports.Exp = Exp;
@@ -222,7 +224,7 @@ class Sqrt extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var sqrtX = this.getSavedData();
-    return mathops.divideScale(outputDerivative, sqrtX, 0.5);
+    return tensor.divideScale(outputDerivative, sqrtX, 0.5);
   }
 }
 exports.Sqrt = Sqrt;
@@ -243,7 +245,7 @@ class Sin extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var X = this.getSavedData();
-    return mathops.multiplyScale(outputDerivative, mathops.cos(X), 1);
+    return tensor.multiplyScale(outputDerivative, mathops.cos(X), 1);
   }
 }
 exports.Sin = Sin;
@@ -265,7 +267,7 @@ class Cos extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var X = this.getSavedData();
-    return mathops.multiplyScale(outputDerivative, mathops.sin(X), -1);
+    return tensor.multiplyScale(outputDerivative, mathops.sin(X), -1);
   }
 }
 exports.Cos = Cos;
@@ -287,10 +289,10 @@ class Tan extends autograd.Operation {
   backward(outputDerivative, argIndex) {
     var tanX = this.getSavedData();
 
-    tanXsquared = mathops.multiplyScale(tanX, tanX, 1);
+    var tanXsquared = tensor.multiplyScale(tanX, tanX, 1);
     //re-use the storage of tanXsquared for the derivative.
-    secXsquared = mathops.addScale(tanXsquared, 1, 1, tanXsquared);
-    derivative = mathops.multiplyScale(outputDerivative,
+    var secXsquared = tensor.addScale(tanXsquared, 1, 1, 1);
+    var derivative = tensor.multiplyScale(outputDerivative,
                                        secXsquared,
                                        1,
                                        secXsquared);
@@ -305,27 +307,24 @@ function tan(x) {
 exports.tan = tan;
 exports.utilityFuncs.push(tan);
 
+class Sum extends autograd.Operation {
 
-// exportOp('abs');
-// exportOp('sqrt');
-// exportOp('sin');
-// exportOp('cos');
-// exportOp('tan');
-// exportOp('sinh');
-// exportOp('cosh');
-// exportOp('tanh');
-// exportOp('log');
-// exportOp('atan');
-// exportOp('acos');
-// exportOp('asin');
-// exportOp('atanh');
-// exportOp('acosh');
-// exportOp('asinh');
-// exportOp('erf');
-// exportOp('floor');
-// exportOp('ceil');
-// exportOp('round');
+  forward(x) {
+    this.saveForBackward(x.data.shape);
+    return x.data.sum();
+  }
 
-// exportBinaryOp('exp');
-// exportBinaryOp('fmod');
+  backward(outputDerivative, argIndex) {
+    var shape = this.getSavedData();
+    return tensor.multiplyScale(outputDerivative,
+                                tensor.onesLike(shape),
+                                1);
+  }
+}
+exports.Sum = Sum;
 
+function sum(x) {
+  return (new Sum())(x);
+}
+exports.sum = sum;
+exports.utilityFuncs.push(sum);

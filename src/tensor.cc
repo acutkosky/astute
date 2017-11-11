@@ -1,4 +1,6 @@
 #include <iostream>
+#include <chrono>
+#include <random>
 #include "cblas.h"
 
 #include "tensor.h"
@@ -8,6 +10,18 @@ TensorError globalError;
 
 using std::cout;
 using std::endl;
+
+std::mt19937 global_generator;
+
+void seed_generator(void) {
+  try {
+    std::random_device rd;
+    global_generator.seed(rd());
+  } catch(int e) {
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count() + 3;
+    global_generator.seed(seed);
+  }
+}
 
 uint32_t Tensor::totalSize(void) {
   if(this->numDimensions == 0) {
@@ -188,15 +202,15 @@ void subTensor(Tensor& source, uint32_t* heldCoords, uint32_t* heldValues, uint3
 
 bool TensorIterator::next(void) {
   uint32_t i = 0;
-  uint32_t offset = 0;
+  int offset = 0;
   currentCoords[i] = (currentCoords[i] + 1) % T->shape[i];
-
   offset += T->strides[i];
   while(currentCoords[i] == 0) {
     offset -= T->strides[i] * T->shape[i];
     i++;
     if(i>=T->numDimensions) {
       ended = true;
+      offset = 0;
       break;
     }
 
@@ -698,6 +712,31 @@ void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest
 
 void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
   return contract(source1, source2, 1, dest, error);
+}
+
+void fillNormal(double mean, double std_dev, Tensor& dest) {
+  std::normal_distribution<double> distribution(mean, std_dev);
+  TensorIterator iterator(dest);
+  do {
+    iterator.get() = distribution(global_generator);
+  } while(iterator.next());
+}
+
+void fillUniform(double low, double high, Tensor& dest) {
+  std::uniform_real_distribution<double> distribution(low, high);
+  TensorIterator iterator(dest);
+  do {
+    iterator.get() = distribution(global_generator);
+  } while(iterator.next());
+}
+
+double sum(Tensor& source) {
+  TensorIterator iterator(source);
+  double answer = 0;
+  do {
+    answer += iterator.get();
+  } while(iterator.next());
+  return answer;
 }
 
 } //namespace tensor

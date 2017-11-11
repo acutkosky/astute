@@ -154,6 +154,14 @@ void fastMatMul(Tensor& source1, Tensor& source2, Tensor& dest);
 
 void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest);
 
+void fillNormal(double mean, double std_dev, Tensor& dest);
+
+void fillUniform(double low, double high, Tensor& dest);
+
+double sum(Tensor& source);
+
 bool isDense(Tensor& source);
+
+void seed_generator(void);
 
 } //namespace tensor
