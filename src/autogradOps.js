@@ -328,3 +328,23 @@ function sum(x) {
 }
 exports.sum = sum;
 exports.utilityFuncs.push(sum);
+
+class Log extends autograd.Operation {
+
+  forward(x) {
+    this.saveForBackward(x.data);
+    return mathops.log(x.data);
+  }
+
+  backward(outputDerivative, argIndex) {
+    var xdata = this.getSavedData();
+    return tensor.divideScale(1, xdata, 1);
+  }
+}
+exports.Log = Log;
+
+function log(x) {
+  return (new Log())(x);
+}
+exports.log = log;
+exports.utilityFuncs.push(log);

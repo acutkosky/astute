@@ -154,7 +154,8 @@ describe('Tensor', function() {
     'sin',
     'cos',
     'tan',
-    'sum'
+    'sum',
+    'log'
     ];
     for(let i=0; i<unaryFuncs.length; i++) {
       testFunction(unaryFuncs[i], [[2,2,2]]);
