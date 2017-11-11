@@ -137,6 +137,10 @@ class Tensor {
     return matMul(this, otherTensor, dest);
   }
 
+  outerProduct(otherTensor, dest) {
+    return outerProduct(this, otherTensor, dest);
+  }
+
   transpose() {
     return transpose(this);
   }
@@ -151,6 +155,10 @@ class Tensor {
 
   sum() {
     return sum(this);
+  }
+
+  scale(x) {
+    return scale(this, x);
   }
 
 }
@@ -270,11 +278,20 @@ exports.broadcastShape = broadcastShape;
 function contract(source1, source2, dimsToContract, dest) {
   if(dest === undefined) {
     let shape = [];
-    for(let dim of source1.shape.slice(0,-dimsToContract)) {
-      shape.push(dim);
-    }
-    for(let dim of source2.shape.slice(dimsToContract)) {
-      shape.push(dim);
+    if(dimsToContract===0) {
+      for(let dim of source1.shape) {
+        shape.push(dim);
+      }
+      for(let dim of source2.shape) {
+        shape.push(dim);
+      }  
+    } else {
+      for(let dim of source1.shape.slice(0,-dimsToContract)) {
+        shape.push(dim);
+      }
+      for(let dim of source2.shape.slice(dimsToContract)) {
+        shape.push(dim);
+      }
     }
     if(shape.length === 0)
       shape = [1];
@@ -292,6 +309,9 @@ function matMul(source1, source2, dest) {
 }
 exports.matMul = matMul;
 
+function outerProduct(source1, source2, dest) {
+  return contract(source1, source2, 0, dest);
+}
 
 function numberToTensor(number) {
   if(number instanceof Tensor)

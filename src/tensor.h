@@ -154,6 +154,8 @@ void fastMatMul(Tensor& source1, Tensor& source2, Tensor& dest);
 
 void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest);
 
+void fastDotProduct(Tensor& vector1, Tensor& vector2, Tensor& dest);
+
 void fillNormal(double mean, double std_dev, Tensor& dest);
 
 void fillUniform(double low, double high, Tensor& dest);

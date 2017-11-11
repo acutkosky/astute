@@ -63,8 +63,20 @@ describe('Tensor', function() {
         r.push(i);
       }
       let T2 = new tensor.Tensor(r);
-      let T3 = T1.matMul(T2);
+      let T3 = T1.dot(T2);
       assert.deepEqual(T3.data, [29*30/2]);
+    });
+    it('should correctly multiply a matrix by a vector', function() {
+      let T1 = new tensor.Tensor([[1,2,3],[4,5,6]]);
+      let T2 = new tensor.Tensor([1,2,3]);
+      let T3 = T1.matMul(T2);
+      assert.deepEqual(T3.data, [14, 32]);
+    });
+    it('should correctly compute an outer-product', function() {
+      let T1 = new tensor.Tensor([1,2]);
+      let T2 = new tensor.Tensor([2,3]);
+      let T3 = T1.outerProduct(T2);
+      assert.deepEqual(T3.data, [2,3,4,6]);
     });
   });
 

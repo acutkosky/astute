@@ -31,6 +31,32 @@ function exportBinaryOp(opname) {
   exports[opname] = binaryOp;
 }
 
+function add(source1, source2, dest) {
+  return tensor.addScale(source1, source2, 1, 1, dest);
+}
+exports.add = add;
+
+function sub(source1, source2, dest) {
+  return tensor.addScale(source1, source2, 1, -1, dest);
+}
+exports.sub = sub;
+
+function mul(source1, source2, dest) {
+  return tensor.multiplyScale(source1, source2, 1, dest);
+}
+exports.mul = mul;
+
+function div(source1, source2, dest) {
+  return tensor.divideScale(source1, source2, 1, dest);
+}
+exports.div = div;
+
+function dot(source1, source2, dest) {
+  return tensor.matMul(source1, source2, dest);
+}
+exports.dot = dot;
+
+
 
 exportOp('exp');
 exportOp('abs');

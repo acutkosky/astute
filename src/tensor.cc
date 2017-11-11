@@ -133,6 +133,8 @@ void transpose(Tensor& source, Tensor& dest, TensorError* error) {
 bool matchedDimensions(Tensor& t1, Tensor& t2) {
   if(t1.numDimensions != t2.numDimensions)
     return false;
+  if(t1.numDimensions == 0)
+    return true;
 
   for(uint32_t i=0; i<t1.numDimensions; i++) {
     if(t1.shape[i] != t2.shape[i])
@@ -201,24 +203,30 @@ void subTensor(Tensor& source, uint32_t* heldCoords, uint32_t* heldValues, uint3
 }
 
 bool TensorIterator::next(void) {
-  uint32_t i = 0;
-  int offset = 0;
-  currentCoords[i] = (currentCoords[i] + 1) % T->shape[i];
-  offset += T->strides[i];
-  while(currentCoords[i] == 0) {
-    offset -= T->strides[i] * T->shape[i];
-    i++;
-    if(i>=T->numDimensions) {
-      ended = true;
-      offset = 0;
-      break;
-    }
 
+  if(T->numDimensions == 0) {
+    ended = true;
+  } else {
+   
+    uint32_t i = 0;
+    int offset = 0;
     currentCoords[i] = (currentCoords[i] + 1) % T->shape[i];
     offset += T->strides[i];
+    while(currentCoords[i] == 0) {
+      offset -= T->strides[i] * T->shape[i];
+      i++;
+      if(i>=T->numDimensions) {
+        ended = true;
+        offset = 0;
+        break;
+      }
 
-   }
-   iterator += offset;
+      currentCoords[i] = (currentCoords[i] + 1) % T->shape[i];
+      offset += T->strides[i];
+
+     }
+     iterator += offset;
+  }
   return !ended;
 }
 
@@ -266,8 +274,9 @@ void print2DCoord(uint32_t* coords) {
   cout<<coords[0]<<" "<<coords[1]<<endl;
 }
 
-bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToContract) {
-
+bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor& dest) {
+  if(dimsToContract == 0)
+    return true;
   if(source1.numDimensions < dimsToContract)
     return false;
   if(source2.numDimensions < dimsToContract)
@@ -281,11 +290,36 @@ bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToC
       return false;
   }
 
+  for(uint32_t i=0; i<source1.numDimensions - dimsToContract; i++) {
+    if(dest.shape[i] != source1.shape[i])
+      return false;
+  }
+  for(uint32_t i=0; i<source2.numDimensions - dimsToContract; i++) {
+    if(dest.shape[i + source1.numDimensions - dimsToContract] !=
+        source2.shape[i + dimsToContract])
+      return false;
+  }
+
   return true;
+}
+
+void outerProduct(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
+
+  do {
+    uint32_t* currentCoords = destIterator.get();
+    dest.at(currentCoords, error) = source1.at(currentCoords, error) * source2.at(currentCoords + source1.numDimensions, error);
+
+    if(*error != NoError)
+      return;
+
+  } while(destIterator.next());
 }
 
 void contract(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor& dest, TensorError* error) {
 
+  //Verify dimensions
   if(dest.numDimensions != 
       source1.numDimensions + source2.numDimensions - 2 * dimsToContract) {
     if(!(dest.numDimensions == 1 && source1.numDimensions + source2.numDimensions - 2 * dimsToContract == 0 )) {
@@ -294,24 +328,43 @@ void contract(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor&
     }
   }
 
-  if(!compatibleForContraction(source1, source2, dimsToContract)) {
+  if(!compatibleForContraction(source1, source2, dimsToContract, dest)) {
     *error = DimensionMismatchError;
     return;
   }
 
+  //check if outer product
+  if(dimsToContract == 0) {
+    outerProduct(source1, source2, dest, error);
+    return;
+  }
+
+  //check for special-case speedups using BLAS routines:
+
+  //MM matrix-matrix multiply
   if(source1.numDimensions==2 && source2.numDimensions==2 && dimsToContract==1) {
     fastMatMul(source1, source2, dest);
     return;
   }
 
+  //Mv matrix-vector multiply
   if(source1.numDimensions==2 && source2.numDimensions==1 && dimsToContract==1) {
     fastMatVectMul(false, source1, source2, dest);
     return;
   }
+
+  //vM vector-matrix multiply
   if(source1.numDimensions==1 && source2.numDimensions==2 && dimsToContract==1) {
     fastMatVectMul(true, source2, source1, dest);
     return;
   }
+
+  //vv dot product
+  if(source1.numDimensions==1 && source2.numDimensions==1 & dimsToContract==1) {
+    fastDotProduct(source1, source2, dest);
+    return;
+  }
+
 
   MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
 
@@ -321,13 +374,17 @@ void contract(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor&
   }
   Tensor sub1, sub2;
 
-  sub1.shape = new uint32_t[dimsToContract];
-  sub1.strides = new uint32_t[dimsToContract];
+  if(dimsToContract != 0) {
+    sub1.shape = new uint32_t[dimsToContract];
+    sub1.strides = new uint32_t[dimsToContract];
+  }
   sub1.numDimensions = dimsToContract;
   sub1.data = source1.data;
 
-  sub2.shape = new uint32_t[dimsToContract];
-  sub2.strides = new uint32_t[dimsToContract];
+  if(dimsToContract != 0) {
+    sub2.shape = new uint32_t[dimsToContract];
+    sub2.strides = new uint32_t[dimsToContract];
+  }
   sub2.numDimensions = dimsToContract;
   sub2.data = source2.data;
 
@@ -357,10 +414,12 @@ void contract(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor&
 
   } while(destIterator.next());
 
-  delete [] sub1.shape;
-  delete [] sub1.strides;
-  delete [] sub2.shape;
-  delete [] sub2.strides;
+  if(dimsToContract != 0) {
+    delete [] sub1.shape;
+    delete [] sub1.strides;
+    delete [] sub2.shape;
+    delete [] sub2.strides;
+  }
 }
 
 bool isBroadcastDimension(Tensor& source1, Tensor& source2, Tensor& dest) {
@@ -709,6 +768,14 @@ void fastMatVectMul(bool transpose, Tensor& matrix, Tensor& vector, Tensor& dest
   return;
 }
 
+void fastDotProduct(Tensor& vector1, Tensor& vector2, Tensor& dest) {
+  dest.data[0] = cblas_ddot(vector1.shape[0], 
+                            vector1.data + vector1.initial_offset,
+                            vector1.strides[0],
+                            vector2.data + vector2.initial_offset,
+                            vector2.strides[0]);
+}
+
 
 void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
   return contract(source1, source2, 1, dest, error);
@@ -716,26 +783,50 @@ void matMul(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) 
 
 void fillNormal(double mean, double std_dev, Tensor& dest) {
   std::normal_distribution<double> distribution(mean, std_dev);
-  TensorIterator iterator(dest);
-  do {
-    iterator.get() = distribution(global_generator);
-  } while(iterator.next());
+  if(isDense(dest)) {
+    uint32_t totalSize = dest.totalSize();
+    double* iterator = dest.data + dest.initial_offset;
+    for(uint32_t i=0; i<totalSize; i++) {
+      iterator[i] = distribution(global_generator);
+    }
+  } else {
+    TensorIterator iterator(dest);
+    do {
+      iterator.get() = distribution(global_generator);
+    } while(iterator.next());
+  }
 }
 
 void fillUniform(double low, double high, Tensor& dest) {
   std::uniform_real_distribution<double> distribution(low, high);
-  TensorIterator iterator(dest);
-  do {
-    iterator.get() = distribution(global_generator);
-  } while(iterator.next());
+  if(isDense(dest)) {
+    uint32_t totalSize = dest.totalSize();
+    double* iterator = dest.data + dest.initial_offset;
+    for(uint32_t i=0; i<totalSize; i++) {
+      iterator[i] = distribution(global_generator);
+    }
+  } else {
+    TensorIterator iterator(dest);
+    do {
+      iterator.get() = distribution(global_generator);
+    } while(iterator.next());
+  }
 }
 
 double sum(Tensor& source) {
-  TensorIterator iterator(source);
   double answer = 0;
-  do {
-    answer += iterator.get();
-  } while(iterator.next());
+  if(isDense(source)) {
+    uint32_t totalSize = source.totalSize();
+    double* iterator = source.data + source.initial_offset;
+    for(uint32_t i=0; i<totalSize; i++) {
+      answer += iterator[i];
+    }
+  } else {
+    TensorIterator iterator(source);
+    do {
+      answer += iterator.get();
+    } while(iterator.next());
+  }
   return answer;
 }
 
