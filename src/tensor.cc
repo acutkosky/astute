@@ -275,8 +275,7 @@ void print2DCoord(uint32_t* coords) {
 }
 
 bool compatibleForContraction(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor& dest) {
-  if(dimsToContract == 0)
-    return true;
+
   if(source1.numDimensions < dimsToContract)
     return false;
   if(source2.numDimensions < dimsToContract)

@@ -9,7 +9,7 @@ exports.utilityFuncs = [];
 class Add extends autograd.Operation {
   forward(x, y) {
     if(!tensor.sameShape(x.data, y.data))
-      throw "arguments must have same shape!";
+      throw new Error("arguments must have same shape!");
 
     return tensor.addScale(x.data, y.data, 1, 1);
   }
@@ -30,7 +30,7 @@ exports.utilityFuncs.push(add);
 class Sub extends autograd.Operation {
   forward(x, y) {
     if(!tensor.sameShape(x.data, y.data))
-      throw "arguments must have same shape!";
+      throw new Error("arguments must have same shape!");
     return tensor.addScale(x.data, y.data, 1, -1);
   }
 
@@ -54,7 +54,7 @@ exports.utilityFuncs.push(sub);
 class Mul extends autograd.Operation {
   forward(x, y) {
     if(!tensor.sameShape(x.data, y.data))
-      throw "arguments must have same shape!";
+      throw new Error("arguments must have same shape!");
     this.saveForBackward([y.data, x.data]);
     return tensor.multiplyScale(x.data, y.data, 1);
   }
@@ -80,7 +80,7 @@ exports.utilityFuncs.push(mul);
 class Div extends autograd.Operation {
   forward(x, y) {
     if(!tensor.sameShape(x.data, y.data))
-      throw "arguments must have same shape!";
+      throw new Error("arguments must have same shape!");
     this.saveForBackward([y.data, x.data]);
     return tensor.divideScale(x.data, y.data, 1);
   }
@@ -151,7 +151,7 @@ class Dot extends autograd.Operation {
 
   forward(x, y) {
     this.saveForBackward([x.data , y.data]);
-    return tensor.matMul(x.data , y.data);
+    return x.data.dot(y.data);
   }
 
   backward(outputDerivative, argIndex) {

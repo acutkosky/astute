@@ -111,7 +111,7 @@ class Operation {
     * TODO: think about operations with fan-out
     */
   forward() {
-    throw 'Forward Not Implemented!';
+    throw new Error('Forward Not Implemented!');
   }
 
   /**
@@ -126,7 +126,7 @@ class Operation {
     * the loss with respect to the argIndex'th input to this.forward.
     */
   backward(outputDerivative, argIndex) {
-    throw 'Backward Not Implemented!';
+    throw new Error('Backward Not Implemented!');
   }
 }
 exports.Operation = Operation;

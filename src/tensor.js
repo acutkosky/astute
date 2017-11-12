@@ -1,6 +1,7 @@
 /* jshint esversion: 6 */
 
 var tensorBinding = require('../build/Release/tensorBinding');
+var tensorUtil = require('./tensorUtil');
 
 var DimensionType = Uint32Array;
 var DataStorageType = Float64Array;
@@ -19,16 +20,6 @@ function parseArrayTensor(data) {
   return shape;
 }
 
-function flattenArray(data) {
-  if(!(data instanceof Array))
-    return data;
-  var flattened = [];
-  for(let i=0; i<data.length; i++) {
-    flattened = flattened.concat(flattenArray(data[i]));
-  }
-  return flattened;
-}
-
 class Tensor {
   constructor(opts) {
     if(opts instanceof Array) {
@@ -41,7 +32,7 @@ class Tensor {
     if(data !== undefined) {
       if(shape === undefined)
         shape = parseArrayTensor(data);
-      data = flattenArray(data);
+      data = tensorUtil.flattenArray(data);
     }
     if(shape !== undefined) {
       if(shape instanceof Array) {
@@ -84,6 +75,7 @@ class Tensor {
       initial_offset = 0;
     }
 
+    this.sparse = false;
     this.shape = shape;
     this.numDimensions = numDimensions;
     this.strides = strides;
@@ -97,11 +89,25 @@ class Tensor {
     var offset = this.initial_offset;
     for(let i=0; i<this.numDimensions; i++) {
       if(coords[i] >= this.shape[i] || coords[i]<0) {
-        throw 'coordinate out of range! coord:' + coords[i] + ' dimension: ' + this.shape[i];
+        throw new Error('coordinate out of range! coord:' + coords[i] + ' dimension: ' + this.shape[i]);
       }
       offset += coords[i] * this.strides[i];
     }
     return this.data[offset];
+  }
+
+  set(coords, value) {
+    if(!(coords instanceof Array))
+      coords = [...arguments];
+    var offset = this.initial_offset;
+    for(let i=0; i<this.numDimensions; i++) {
+      if(coords[i] >= this.shape[i] || coords[i]<0) {
+        throw new Error('coordinate out of range! coord:' + coords[i] + ' dimension: ' + this.shape[i]);
+      }
+      offset += coords[i] * this.strides[i];
+    }
+    this.data[offset] = value;
+    return value;
   }
 
   totalSize() {
@@ -131,10 +137,6 @@ class Tensor {
 
   contract(otherTensor, dimsToContract, dest) {
     return contract(this, otherTensor, dimsToContract, dest);
-  }
-
-  matMul(otherTensor, dest) {
-    return matMul(this, otherTensor, dest);
   }
 
   outerProduct(otherTensor, dest) {
@@ -302,12 +304,6 @@ function contract(source1, source2, dimsToContract, dest) {
   return dest;
 }
 exports.contract = contract;
-
-
-function matMul(source1, source2, dest) {
-  return contract(source1, source2, 1, dest);
-}
-exports.matMul = matMul;
 
 function outerProduct(source1, source2, dest) {
   return contract(source1, source2, 0, dest);

@@ -1,4 +1,7 @@
+/* jshint esversion:6 */
+
 tensor = require('./tensor');
+sparseTensor = require('./sparseTensor');
 nodetensor = require('../build/Release/tensorBinding');
 
 function exportOp(opname) {
@@ -52,10 +55,32 @@ function div(source1, source2, dest) {
 exports.div = div;
 
 function dot(source1, source2, dest) {
+  if(source2.sparse) {
+    let dp = source2.dot(source1);
+    if(dest !== undefined)
+      dest.set(0, dp);
+    return dp;
+  }
+  if(source1.sparse) {
+    let dp = source1.dot(source2);
+    if(dest !== undefined)
+      dest.set(0, dp);
+    return dp;
+  }
   return tensor.matMul(source1, source2, dest);
 }
 exports.dot = dot;
 
+function matMul(source1, source2, dest) {
+  if(source1.sparse) {
+    return sparseTensor.matMul(source1, source2, dest);
+  } else if(source2.sparse) {
+    return sparseTensor.matMul(source2, source1.transpose(), dest);
+  } else {
+    return tensor.contract(source1, source2, 1, dest);
+  }
+}
+exports.matMul = matMul;
 
 
 exportOp('exp');

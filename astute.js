@@ -4,6 +4,7 @@ var tensor = require('./src/tensor');
 var mathops = require('./src/mathops');
 var autograd = require('./src/autograd');
 var autogradOps = require('./src/autogradOps');
+var sparseTensor = require('./src/sparseTensor');
 
 function firstArgisThis(func) {
   return function() {
@@ -34,3 +35,4 @@ for (let i=0; i<autogradOps.utilityFuncs.length; i++) {
   autograd.Variable.prototype[func.name] = firstArgisThis(func);
 }
 
+exports.sparseTensor = sparseTensor;

@@ -3,7 +3,7 @@
 var assert = require('assert');
 var astute = require('../astute');
 
-var {tensor, autograd} = astute;
+var {tensor, sparseTensor, autograd} = astute;
 
 describe('Tensor', function() {
   describe('constructor', function() {
@@ -31,7 +31,7 @@ describe('Tensor', function() {
   });
 
   describe('contract', function() {
-    it('should correctly multiply two matrices', function() {
+    it('should multiply two matrices', function() {
       let T1 = new tensor.Tensor([[1,2],[3,4]]);
       let T2 = new tensor.Tensor([[2,3],[4,5]]);
       let T3 = T1.matMul(T2);
@@ -39,7 +39,7 @@ describe('Tensor', function() {
       assert.deepEqual(T3.data, [10,13,
                                  22,29]);
     });
-    it('should correctly multiply a matrix by a transposed matrix', function() {
+    it('should multiply a matrix by a transposed matrix', function() {
       let T1 = new tensor.Tensor([[1,2,3],[3,4,5]]);
       let T2 = new tensor.Tensor([[1,2,0],[2,0,2]]);
       let T3 = T1.matMul(T2.transpose());
@@ -47,7 +47,7 @@ describe('Tensor', function() {
       assert.deepEqual(T3.data, [  5,  8,
                                   11, 16 ]);
     });
-    it('should correctly contract a higher order tensor', function() {
+    it('should contract a higher order tensor', function() {
       let T1 = new tensor.Tensor([[[1,2],[3,4]],[[5,6],[7,8]]]);
       let T2 = new tensor.Tensor([1,2]);
       let T3 = T1.contract(T2, 1);
@@ -56,7 +56,7 @@ describe('Tensor', function() {
 
       assert.deepEqual(T3.data, [5,11,17,23]);
     });
-    it('should correctly compute a dot product', function() {
+    it('should compute a dot product', function() {
       let T1 = new tensor.onesLike([30]);
       var r = [];
       for(let i=0; i<30; i++) {
@@ -66,17 +66,61 @@ describe('Tensor', function() {
       let T3 = T1.dot(T2);
       assert.deepEqual(T3.data, [29*30/2]);
     });
-    it('should correctly multiply a matrix by a vector', function() {
+    it('should multiply a matrix by a vector', function() {
       let T1 = new tensor.Tensor([[1,2,3],[4,5,6]]);
       let T2 = new tensor.Tensor([1,2,3]);
       let T3 = T1.matMul(T2);
       assert.deepEqual(T3.data, [14, 32]);
     });
-    it('should correctly compute an outer-product', function() {
+    it('should compute an outer-product', function() {
       let T1 = new tensor.Tensor([1,2]);
       let T2 = new tensor.Tensor([2,3]);
       let T3 = T1.outerProduct(T2);
       assert.deepEqual(T3.data, [2,3,4,6]);
+    });
+  });
+
+  describe('Sparse Vector', function() {
+    it('should create sparse vectors', function() {
+      var ST = new sparseTensor.SparseVector([[1,123], [34, 23423]]);
+      assert.equal(ST.at(34), 23423);
+      assert.equal(ST.at([1]), 123);
+      assert.equal(ST.at(3), 0);
+
+      ST.set(7, -23);
+      assert.equal(ST.at(7), -23);
+    });
+
+    it('should compute dot products with dense tensors', function() {
+      var ST = new sparseTensor.SparseVector([[0,4], [4,11]]);
+      var T = new tensor.Tensor([1,2,3,4,5,6,7]);
+      var dp = ST.dot(T);
+
+      assert.equal(dp, 59);
+
+      dp = T.dot(ST);
+      assert.equal(dp, 59);
+    });
+
+    it('should compute dot products with sparse tensors', function() {
+      var ST1 = new sparseTensor.SparseVector([[0,4], [4,11], [9, 3]]);
+      var ST2 = new sparseTensor.SparseVector([[23, 343], [9,2], [0,5]]);
+      var dp = ST1.dot(ST2);
+
+      assert.equal(dp, 26);
+    });
+
+    it('should multiply sparse vectors by dense matrices', function() {
+      var M1 = new tensor.Tensor([[1,2],[3,4],[5,6]]);
+      var S1 = new sparseTensor.SparseVector([[0,1],[2,4]], 3);
+      var p1 = S1.matMul(M1);
+      assert.deepEqual(p1.data, [21, 26]);
+
+      var M2 = new tensor.Tensor([[1,2,3],[3,4,5]]);
+      var S2 = new sparseTensor.SparseVector([[0,2]], 2);
+      var p2 = M2.matMul(S2);
+      assert.deepEqual(p2.data, [2, 6]);
+
     });
   });
 
@@ -148,7 +192,7 @@ describe('Tensor', function() {
   }
 
   function testFunction(funcname, shapes) {
-    it('correctly differentiates '+funcname, function() {
+    it('differentiates '+funcname, function() {
       // console.log("cos: ",autograd);
       for(let trial=0; trial<10; trial++) {
         var error = numericalGrad(autograd[funcname], shapes, 1, 10);
