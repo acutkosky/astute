@@ -28,6 +28,20 @@ describe('Tensor', function() {
       let T = new tensor.Tensor(4);
       assert.deepEqual(T.data, new Float64Array([4]));
     });
+
+    it('should multiply a tensor by a number', function() {
+      let T = new tensor.Tensor([1,2]);
+      let scaled = tensor.scale(T, 3);//T.scale(3);
+      assert.deepEqual(scaled.data, [3,6]);
+    });
+
+    it('should add tensors with broadcasting', function() {
+      let T1 = new tensor.Tensor([[1,2],[3,4]]);
+      let T2 = new tensor.Tensor([1,2]);
+      let T3 = T1.add(T2);
+      assert.deepEqual(T3.data, [2, 4, 4, 6]);
+    });
+
   });
 
   describe('contract', function() {
@@ -120,11 +134,20 @@ describe('Tensor', function() {
       var S2 = new sparseTensor.SparseVector([[0,2]], 2);
       var p2 = M2.matMul(S2);
       assert.deepEqual(p2.data, [2, 6]);
+    });
 
+    it('should add sparse vectors', function() {
+      let S1 = new sparseTensor.SparseVector([[0,2]]);
+      let S2 = new sparseTensor.SparseVector([[0,4], [1,3]]);
+      let S3 = S1.add(S2);
+
+      assert.equal(S3.at(0), 6);
+      assert.equal(S3.at(1), 3);
+      assert.equal(S3.at(2), 0);
     });
   });
 
-  function numericalGrad(opFunc, inputShapes, low, high) {
+  function numericalGrad(opFunc, inputShapes, low, high, sparseInput) {
     var baseVariables = [];
     var baseTensors = [];
     var perturbedTensors = [];
@@ -134,8 +157,16 @@ describe('Tensor', function() {
     var epsilon = range*0.00000001;
 
     for(let i=0 ;i<inputShapes.length; i++) {
-      var T = new tensor.zerosLike(inputShapes[i]);
-      T.fillUniform(low, high);
+      var T = undefined;
+      if(sparseInput) {
+        var uniformData = Math.random() * (high-low) + low;
+        var randomIndex = Math.floor(Math.random() * inputShapes[0][0]);
+
+        T = new sparseTensor.SparseVector([[randomIndex, uniformData]], inputShapes[0][0]);
+      } else {
+        T = new tensor.zerosLike(inputShapes[i]);
+        T.fillUniform(low, high);
+      }
       baseTensors.push(T);
       baseVariables.push(new autograd.Variable(T));
 
@@ -168,6 +199,8 @@ describe('Tensor', function() {
     var error = tensor.addScale(numDirectionalGrad, directionalGrad, 1, -1);
     var dynamicRange = tensor.addScale(numDirectionalGrad.abs(), directionalGrad.abs(), 1, 1);
     var relativeError = tensor.divideScale(error, dynamicRange, 1);
+    if(relativeError.data.sparse)
+      relativeError.data = relativeError.data.toDense();
     return relativeError.data;
   }
 
@@ -214,7 +247,11 @@ describe('Tensor', function() {
     'log'
     ];
     for(let i=0; i<unaryFuncs.length; i++) {
-      testFunction(unaryFuncs[i], [[2,2,2]]);
+      testFunction(unaryFuncs[i], [[2,2,2]], 5, 100);
+    }
+
+    for(let i=0; i<unaryFuncs.length; i++) {
+      testFunction(unaryFuncs[i], [[3]], 5, 100, true);
     }
 
     var binaryFuncs = [

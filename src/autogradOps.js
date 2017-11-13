@@ -1,8 +1,8 @@
 /* jshint esversion: 6 */
 
-autograd = require('./autograd');
-tensor = require('./tensor');
-mathops = require('./mathops');
+var autograd = require('./autograd');
+var tensor = require('./tensor');
+var mathops = require('./mathops');
 
 exports.utilityFuncs = [];
 

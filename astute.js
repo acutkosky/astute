@@ -14,11 +14,13 @@ function firstArgisThis(func) {
 }
 
 exports.tensor = tensor;
+tensor.mathOps = {};
 for (let key in mathops) {
-  exports.tensor[key] = mathops[key];
+  exports.tensor.mathOps[key] = mathops[key];
   if(mathops[key] instanceof Function) {
     let func = mathops[key];
     tensor.Tensor.prototype[key] = firstArgisThis(func);
+    sparseTensor.SparseVector.prototype[key] = firstArgisThis(func);
   }
 }
 

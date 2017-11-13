@@ -321,7 +321,7 @@ function addScale(source1, source2, scale1, scale2, dest) {
   source1 = numberToTensor(source1);
   source2 = numberToTensor(source2);
   if(dest === undefined)
-    dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
+    dest = zerosLike(broadcastShape(source1, source2));
   dest = numberToTensor(dest);
   tensorBinding.addScale(source1, source2, scale1, scale2, dest);
   return dest;
@@ -332,7 +332,7 @@ function multiplyScale(source1, source2, scale, dest) {
   source1 = numberToTensor(source1);
   source2 = numberToTensor(source2);
   if(dest === undefined)
-    dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
+    dest = zerosLike(broadcastShape(source1, source2));
   dest = numberToTensor(dest);
 
   tensorBinding.multiplyScale(source1, source2, scale, dest);
@@ -344,7 +344,7 @@ function divideScale(source1, source2, scale, dest) {
   source1 = numberToTensor(source1);
   source2 = numberToTensor(source2);
   if(dest === undefined)
-    dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
+    dest = zerosLike(broadcastShape(source1, source2));
   dest = numberToTensor(dest);
 
   tensorBinding.divideScale(source1, source2, scale, dest);
@@ -355,7 +355,7 @@ exports.divideScale = divideScale;
 function scale(source, scale, dest) {
   source = numberToTensor(source);
   if(dest === undefined)
-    dest = tensor.zerosLike(source);
+    dest = zerosLike(source);
   tensorBinding.scale(source, scale, dest);
   return dest;
 }
