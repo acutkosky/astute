@@ -187,17 +187,6 @@ function fillUniform(low, high, dest) {
 }
 exports.fillUniform = fillUniform;
 
-function sameShape(tensor1, tensor2) {
-  if(tensor1.numDimensions != tensor2.numDimensions)
-    return false;
-  for(let i=0; i<tensor1.numDimensions; i++) {
-    if(tensor1.shape[i] != tensor2.shape[i])
-      return false;
-  }
-  return true;
-}
-exports.sameShape = sameShape;
-
 function print2DTensor(tensor) {
   var strings = [];
   for(let i=0; i<tensor.shape[0]; i++) {
@@ -334,7 +323,6 @@ function multiplyScale(source1, source2, scale, dest) {
   if(dest === undefined)
     dest = zerosLike(broadcastShape(source1, source2));
   dest = numberToTensor(dest);
-
   tensorBinding.multiplyScale(source1, source2, scale, dest);
   return dest;
 }

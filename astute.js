@@ -14,9 +14,9 @@ function firstArgisThis(func) {
 }
 
 exports.tensor = tensor;
-tensor.mathOps = {};
+tensor.mathops = {};
 for (let key in mathops) {
-  exports.tensor.mathOps[key] = mathops[key];
+  exports.tensor.mathops[key] = mathops[key];
   if(mathops[key] instanceof Function) {
     let func = mathops[key];
     tensor.Tensor.prototype[key] = firstArgisThis(func);

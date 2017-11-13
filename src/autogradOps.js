@@ -8,10 +8,10 @@ exports.utilityFuncs = [];
 
 class Add extends autograd.Operation {
   forward(x, y) {
-    if(!tensor.sameShape(x.data, y.data))
+    if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
 
-    return tensor.addScale(x.data, y.data, 1, 1);
+    return mathops.addScale(x.data, y.data, 1, 1);
   }
 
   backward(outputDerivative, argIndex) {
@@ -29,9 +29,10 @@ exports.utilityFuncs.push(add);
 
 class Sub extends autograd.Operation {
   forward(x, y) {
-    if(!tensor.sameShape(x.data, y.data))
+    if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
-    return tensor.addScale(x.data, y.data, 1, -1);
+    var answer = mathops.addScale(x.data, y.data, 1, -1);
+    return mathops.addScale(x.data, y.data, 1, -1);
   }
 
   backward(outputDerivative, argIndex) {
@@ -39,7 +40,8 @@ class Sub extends autograd.Operation {
       case 0:
         return outputDerivative;
       case 1:
-        return tensor.scale(outputDerivative, -1);
+        var answer = mathops.scale(outputDerivative, -1);
+        return mathops.scale(outputDerivative, -1);
     }
   }
 }
@@ -53,19 +55,19 @@ exports.utilityFuncs.push(sub);
 
 class Mul extends autograd.Operation {
   forward(x, y) {
-    if(!tensor.sameShape(x.data, y.data))
+    if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
     this.saveForBackward([y.data, x.data]);
-    return tensor.multiplyScale(x.data, y.data, 1);
+    return mathops.multiplyScale(x.data, y.data, 1);
   }
 
   backward(outputDerivative, argIndex) {
     var [ydata, xdata] = this.getSavedData();
     switch(argIndex) {
       case 0:
-        return tensor.multiplyScale(outputDerivative, ydata, 1);
+        return mathops.multiplyScale(outputDerivative, ydata, 1);
       case 1:
-        return tensor.multiplyScale(outputDerivative, xdata, 1);
+        return mathops.multiplyScale(outputDerivative, xdata, 1);
     }
   }
 }
@@ -79,21 +81,21 @@ exports.utilityFuncs.push(mul);
 
 class Div extends autograd.Operation {
   forward(x, y) {
-    if(!tensor.sameShape(x.data, y.data))
+    if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
     this.saveForBackward([y.data, x.data]);
-    return tensor.divideScale(x.data, y.data, 1);
+    return mathops.divideScale(x.data, y.data, 1);
   }
 
   backward(outputDerivative, argIndex) {
     var [ydata, xdata] = this.getSavedData();
     switch(argIndex) {
       case 0:
-        return tensor.divideScale(outputDerivative, ydata, 1);
+        return mathops.divideScale(outputDerivative, ydata, 1);
       case 1:
-        var answer_holder = tensor.multiplyScale(ydata, ydata, 1);
-        var divided = tensor.divideScale(outputDerivative, answer_holder, -1, answer_holder);
-        return tensor.multiplyScale(answer_holder, xdata, 1, answer_holder);
+        var answer_holder = mathops.multiplyScale(ydata, ydata, 1);
+        var divided = mathops.divideScale(outputDerivative, answer_holder, -1, answer_holder);
+        return mathops.multiplyScale(answer_holder, xdata, 1, answer_holder);
     }
   }
 }
@@ -111,11 +113,11 @@ class Scale extends autograd.Operation {
     this.x = x;
   }
   forward(v) {
-    return tensor.scale(v.data, this.x);
+    return mathops.scale(v.data, this.x);
   }
 
   backward(outputDerivative, argIndex) {
-    return tensor.scale(outputDerivative, this.x);
+    return mathops.scale(outputDerivative, this.x);
   }
 }
 exports.Scale = Scale;
@@ -132,7 +134,7 @@ class AddScalar extends autograd.Operation {
     this.x = x;
   }
   forward(v) {
-    return tensor.addScale(v.data, this.x, 1);
+    return mathops.addScale(v.data, this.x, 1);
   }
 
   backward(outputDerivative, argIndex) {
@@ -158,9 +160,9 @@ class Dot extends autograd.Operation {
     var [xdata , ydata] = this.getSavedData();
     switch(argIndex) {
       case 0:
-        return tensor.multiplyScale(ydata, outputDerivative, 1);
+        return mathops.multiplyScale(ydata, outputDerivative, 1);
       case 1:
-        return tensor.multiplyScale(xdata, outputDerivative, 1);
+        return mathops.multiplyScale(xdata, outputDerivative, 1);
     }
   }
 }
@@ -176,12 +178,12 @@ class Square extends autograd.Operation {
 
   forward(x) {
     this.saveForBackward(x.data);
-    return tensor.multiplyScale(x.data, x.data, 1);
+    return mathops.multiplyScale(x.data, x.data, 1);
   }
 
   backward(outputDerivative) {
     var inputData = this.getSavedData();
-    return tensor.multiplyScale(outputDerivative, inputData, 2);
+    return mathops.multiplyScale(outputDerivative, inputData, 2);
   }
 }
 exports.Square = Square;
@@ -203,7 +205,8 @@ class Exp extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var expX = this.getSavedData();
-    return tensor.multiplyScale(outputDerivative, expX, 1);
+    var answer =  mathops.multiplyScale(outputDerivative, expX, 1);
+    return answer;
   }
 }
 exports.Exp = Exp;
@@ -224,7 +227,7 @@ class Sqrt extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var sqrtX = this.getSavedData();
-    return tensor.divideScale(outputDerivative, sqrtX, 0.5);
+    return mathops.divideScale(outputDerivative, sqrtX, 0.5);
   }
 }
 exports.Sqrt = Sqrt;
@@ -245,7 +248,7 @@ class Sin extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var X = this.getSavedData();
-    return tensor.multiplyScale(outputDerivative, mathops.cos(X), 1);
+    return mathops.multiplyScale(outputDerivative, mathops.cos(X), 1);
   }
 }
 exports.Sin = Sin;
@@ -267,7 +270,7 @@ class Cos extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var X = this.getSavedData();
-    return tensor.multiplyScale(outputDerivative, mathops.sin(X), -1);
+    return mathops.multiplyScale(outputDerivative, mathops.sin(X), -1);
   }
 }
 exports.Cos = Cos;
@@ -289,10 +292,10 @@ class Tan extends autograd.Operation {
   backward(outputDerivative, argIndex) {
     var tanX = this.getSavedData();
 
-    var tanXsquared = tensor.multiplyScale(tanX, tanX, 1);
+    var tanXsquared = mathops.multiplyScale(tanX, tanX, 1);
     //re-use the storage of tanXsquared for the derivative.
-    var secXsquared = tensor.addScale(tanXsquared, 1, 1, 1);
-    var derivative = tensor.multiplyScale(outputDerivative,
+    var secXsquared = mathops.addScale(tanXsquared, 1, 1, 1);
+    var derivative = mathops.multiplyScale(outputDerivative,
                                        secXsquared,
                                        1,
                                        secXsquared);
@@ -316,7 +319,7 @@ class Sum extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var shape = this.getSavedData();
-    return tensor.multiplyScale(outputDerivative,
+    return mathops.multiplyScale(outputDerivative,
                                 tensor.onesLike(shape),
                                 1);
   }
@@ -338,7 +341,7 @@ class Log extends autograd.Operation {
 
   backward(outputDerivative, argIndex) {
     var xdata = this.getSavedData();
-    return tensor.divideScale(1, xdata, 1);
+    return mathops.divideScale(1, xdata, 1);
   }
 }
 exports.Log = Log;

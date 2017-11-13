@@ -6,12 +6,15 @@ var nodetensor = require('../build/Release/tensorBinding');
 
 var mathjs = require('mathjs');
 
-function exportOp(opname, opfunc) {
+function exportOp(opname, canSparse, opfunc) {
   if(opfunc === undefined)
     opfunc = Math[opname];
+
   function op(source, dest) {
+    if(source.sparse && !canSparse) {
+      source = source.toDense();
+    }
     if(source.sparse) {
-      console.log("hihihi");
       return source.apply(opfunc, dest);
     } else {
       source = tensor.numberToTensor(source);
@@ -105,8 +108,7 @@ function scale(source, scale, dest) {
   if(source.sparse) {
     return sparseTensor.scale(source, scale, dest);
   } else {
-    tensor.scale(source, scale, dest);
-    return dest;
+    return tensor.scale(source, scale, dest);
   }
 }
 exports.scale = scale;
@@ -147,6 +149,17 @@ function matMul(source1, source2, dest) {
   }
 }
 exports.matMul = matMul;
+
+function sameShape(tensor1, tensor2) {
+  if(tensor1.numDimensions != tensor2.numDimensions)
+    return false;
+  for(let i=0; i<tensor1.numDimensions; i++) {
+    if(tensor1.shape[i] != tensor2.shape[i])
+      return false;
+  }
+  return true;
+}
+exports.sameShape = sameShape;
 
 exportOp('exp');
 exportOp('abs');

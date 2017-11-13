@@ -145,6 +145,14 @@ describe('Tensor', function() {
       assert.equal(S3.at(1), 3);
       assert.equal(S3.at(2), 0);
     });
+    it('should add sparse vectors to dense vectors', function() {
+      let S1 = new sparseTensor.SparseVector([[0,2]], 3);
+      let T2 = new tensor.Tensor([4,3,0]);
+      let S3 = S1.add(T2);
+      assert.equal(S3.at(0), 6);
+      assert.equal(S3.at(1), 3);
+      assert.equal(S3.at(2), 0);
+    });
   });
 
   function numericalGrad(opFunc, inputShapes, low, high, sparseInput) {
@@ -154,7 +162,7 @@ describe('Tensor', function() {
     var noiseTensors = [];
 
     var range = high-low;
-    var epsilon = range*0.00000001;
+    var epsilon = range*0.000000001;
 
     for(let i=0 ;i<inputShapes.length; i++) {
       var T = undefined;
@@ -174,33 +182,31 @@ describe('Tensor', function() {
       var scaledEpsilon = epsilon/Math.sqrt(T.totalSize());
       noise.fillNormal(0, epsilon);
       noiseTensors.push(noise);
-      perturbedTensors.push(tensor.addScale(noise, T, 1, 1));
+      perturbedTensors.push(tensor.mathops.addScale(noise, T, 1, 1));
 
     }
-
     var result = opFunc(...baseVariables).sum();
     var perturbedResult = opFunc(...perturbedTensors).sum();
     result.zeroGrad();
     result.backward();
-
-    var diff = tensor.addScale(perturbedResult.data, result.data, 1, -1);
+    var diff = tensor.mathops.addScale(perturbedResult.data, result.data, 1, -1);
 
     var norm = new tensor.Tensor([0]);
     var directionalGrad = new tensor.Tensor([0]);
     for(let i=0; i<baseVariables.length; i++) {
-      var currentNormSq = tensor.multiplyScale(noiseTensors[i], noiseTensors[i], 1).sum();
-      tensor.addScale(norm, currentNormSq, 1, 1, norm);
+      var currentNormSq = tensor.mathops.multiplyScale(noiseTensors[i], noiseTensors[i], 1).sum();
+      tensor.mathops.addScale(norm, currentNormSq, 1, 1, norm);
       norm = norm.sqrt();
-      var currentDotProduct = tensor.multiplyScale(noiseTensors[i], baseVariables[i].grad, 1).sum();
-      tensor.addScale(directionalGrad, currentDotProduct, 1, 1, directionalGrad);
+      var currentDotProduct = tensor.mathops.multiplyScale(noiseTensors[i], baseVariables[i].grad, 1).sum();
+      tensor.mathops.addScale(directionalGrad, currentDotProduct, 1, 1, directionalGrad);
     }
-    tensor.divideScale(directionalGrad, norm, 1, directionalGrad);
-    var numDirectionalGrad = tensor.divideScale(diff, norm, 1);
-    var error = tensor.addScale(numDirectionalGrad, directionalGrad, 1, -1);
-    var dynamicRange = tensor.addScale(numDirectionalGrad.abs(), directionalGrad.abs(), 1, 1);
-    var relativeError = tensor.divideScale(error, dynamicRange, 1);
-    if(relativeError.data.sparse)
-      relativeError.data = relativeError.data.toDense();
+    tensor.mathops.divideScale(directionalGrad, norm, 1, directionalGrad);
+    var numDirectionalGrad = tensor.mathops.divideScale(diff, norm, 1);
+    var error = tensor.mathops.addScale(numDirectionalGrad, directionalGrad, 1, -1);
+    var dynamicRange = tensor.mathops.addScale(numDirectionalGrad.abs(), directionalGrad.abs(), 1, 1);
+    var relativeError = tensor.mathops.divideScale(error, dynamicRange, 1);
+    if(relativeError.sparse)
+      relativeError = relativeError.toDense();
     return relativeError.data;
   }
 
@@ -210,7 +216,7 @@ describe('Tensor', function() {
       if(Math.abs(value) < epsilon)
         return true;
       else
-        throw value + ' is not small!';
+        throw new Error(value + ' is not small!');
     }
     if(value instanceof tensor.Tensor) {
       if(value.numDimensions > 1 || value.shape[0]!=1){
@@ -221,14 +227,18 @@ describe('Tensor', function() {
       else
         throw value.data[0] + ' is not small!';
     }
-    throw "Must supply a number or a Tensor to isSmall!";
+    throw new Error("Must supply a number or a Tensor to isSmall, supplied " +value);
   }
 
-  function testFunction(funcname, shapes) {
-    it('differentiates '+funcname, function() {
+  function testFunction(funcname, shapes, sparse) {
+    var sparseString = '';
+    if(sparse) {
+      sparseString = 'sparse ';
+    }
+    it('differentiates '+sparseString+funcname, function() {
       // console.log("cos: ",autograd);
       for(let trial=0; trial<10; trial++) {
-        var error = numericalGrad(autograd[funcname], shapes, 1, 10);
+        var error = numericalGrad(autograd[funcname], shapes, 1, 10, sparse);
         assertSmall(error);
       }
     });
@@ -247,11 +257,12 @@ describe('Tensor', function() {
     'log'
     ];
     for(let i=0; i<unaryFuncs.length; i++) {
-      testFunction(unaryFuncs[i], [[2,2,2]], 5, 100);
+      testFunction(unaryFuncs[i], [[2,2,2]]);
     }
 
     for(let i=0; i<unaryFuncs.length; i++) {
-      testFunction(unaryFuncs[i], [[3]], 5, 100, true);
+      if(unaryFuncs[i] != 'log')
+        testFunction(unaryFuncs[i], [[3]], true);
     }
 
     var binaryFuncs = [
@@ -262,7 +273,12 @@ describe('Tensor', function() {
     'div'
     ];
     for(let i=0; i<binaryFuncs.length; i++) {
-      testFunction(binaryFuncs[i], [[1], [1]], 2,3);
+      testFunction(binaryFuncs[i], [[4], [4]]);
+    }
+
+    for(let i=0; i<binaryFuncs.length; i++) {
+      if(binaryFuncs[i] != 'div')
+        testFunction(binaryFuncs[i], [[1], [1]], true);
     }
   });
 });

@@ -1,12 +1,12 @@
 /* jshint esversion: 6 */ 
 var tensor = require('./tensor');
-
+var sparseTensor = require('./sparseTensor');
 
 class Variable {
   constructor(data, opts) {
     var {stopGrad, requiresGrad} = opts || {stopGrad: false, 
                                             requiresGrad: true};
-    if(!(data instanceof tensor.Tensor))
+    if(!(data instanceof tensor.Tensor) && !(data instanceof sparseTensor.SparseVector))
       data = new tensor.Tensor(data);
     this.data = data;
     this.grad = null;
