@@ -4,15 +4,20 @@ var sparseTensor = require('./sparseTensor');
 
 class Variable {
   constructor(data, opts) {
-    var {stopGrad, requiresGrad} = opts || {stopGrad: false, 
-                                            requiresGrad: true};
+    opts = opts || {};
+    var {stopGrad, requiresGrad} = opts;
+    if(stopGrad === undefined)
+      stopGrad = false;
+    if(requiresGrad === undefined)
+      requiresGrad = true;
+
     if(!(data instanceof tensor.Tensor) && !(data instanceof sparseTensor.SparseVector))
       data = new tensor.Tensor(data);
     this.data = data;
-    this.grad = null;
-    this.parent = null;
+    this.grad = undefined;
+    this.parent = undefined;
     this.stopGrad = stopGrad;
-    this.requiresGrad = true;
+    this.requiresGrad = requiresGrad;
     this.children = [];
   }
 
@@ -20,19 +25,19 @@ class Variable {
     if(derivative === undefined) {
       derivative = 1.0;
     }
-    if(this.grad === null) {
+    if(this.grad === undefined) {
       this.grad = derivative;
     } else {
       tensor.addScale(this.grad, derivative, 1, this.grad);
     }
 
-    if(this.parent !== null && !this.stopGrad)
+    if(this.parent !== undefined && !this.stopGrad)
       this.parent.backwardWrapper(derivative);
   }
 
   zeroGrad() {
-    this.grad = null;
-    if(this.parent !== null)
+    this.grad = undefined;
+    if(this.parent !== undefined)
       this.parent.zeroGrad();
   }
 }
@@ -86,10 +91,10 @@ class Operation {
   }
 
   backwardWrapper(outputDerivative) {
-    var inputDerivatives = [];
+    var inputDerivatives = {};
     for(let i=0; i<this.parents.length; i++) {
       if(this.parents[i].requiresGrad) {
-        inputDerivatives.push(this.backward(outputDerivative, i));
+        inputDerivatives[i] = this.backward(outputDerivative, i);
       }
     }
 

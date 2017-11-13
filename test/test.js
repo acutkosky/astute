@@ -280,5 +280,21 @@ describe('Tensor', function() {
       if(binaryFuncs[i] != 'div')
         testFunction(binaryFuncs[i], [[1], [1]], true);
     }
+
+    it('returns sparse gradient for dot product with sparse vector', function() {
+      var S1 = new sparseTensor.SparseVector([[0,3],[5,10]], 6);
+      var T2 = new tensor.onesLike([6]);
+
+      var V1 = new autograd.Variable(S1, {requiresGrad: false});
+      var V2 = new autograd.Variable(T2);
+
+      var dotp = V1.dot(V2);
+
+      dotp.zeroGrad();
+      dotp.backward();
+
+      assert.equal(V1.grad, undefined);
+      assert.equal(V2.grad.at(5), 10);
+    });
   });
 });
