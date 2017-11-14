@@ -83,18 +83,22 @@ using tensor::TensorError;
 
 
 void print2DTensor(Tensor& T) {
-
+  uint32_t print_array[2];
   for(uint32_t i=0; i<T.shape[0]; i++) {
     for(uint32_t j=0; j<T.shape[1]; j++) {
-      cout<<T.at((uint32_t[]){i, j})<<" ";
+      print_array[0] = i;
+      print_array[1] = j;
+      cout<<T.at(print_array)<<" ";
     }
     cout<<endl;
   }
 }
 
 void print1DTensor(Tensor& T) {
+  uint32_t print_array[1];
   for(uint32_t i=0; i<T.shape[0]; i++) {
-    cout<<T.at((uint32_t[]){i})<<" ";
+    print_array[0] = i;
+    cout<<T.at(print_array)<<" ";
   }
   cout<<endl;
 }
