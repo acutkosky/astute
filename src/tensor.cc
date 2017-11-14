@@ -359,7 +359,7 @@ void contract(Tensor& source1, Tensor& source2, uint32_t dimsToContract, Tensor&
   }
 
   //vv dot product
-  if(source1.numDimensions==1 && source2.numDimensions==1 & dimsToContract==1) {
+  if(source1.numDimensions==1 && source2.numDimensions==1 && dimsToContract==1) {
     fastDotProduct(source1, source2, dest);
     return;
   }
