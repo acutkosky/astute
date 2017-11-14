@@ -66,9 +66,21 @@ void sign(Tensor& source, Tensor& dest, TensorError* error) {
   } while(destIterator.next());
 }
 
+void abs(Tensor& source, Tensor& dest, TensorError* error) {
+  if(!matchedDimensions(source, dest)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
+  do {
+    uint32_t* currentCoords = destIterator.get();
+    double sourceVal = source.at(currentCoords);
+    dest.at(currentCoords) = sourceVal>0?sourceVal:-sourceVal;
+  } while(destIterator.next());
+}
+
 
 CREATE_OP(exp)
-CREATE_OP(abs)
 CREATE_OP(sqrt)
 CREATE_OP(sin)
 CREATE_OP(cos)
