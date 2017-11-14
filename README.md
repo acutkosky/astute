@@ -8,8 +8,9 @@ This package requires BLAS to function. If you're on a mac it should be already 
 Declare a new tensor:
 ```
 var astute = require('astute');
+var Tensor = astute.tensor.Tensor;
 
-var T = new astute.Tensor({
+var T = new Tensor({
   shape:[3,3],
   data: [1,2,3,
          4,5,6,
@@ -20,19 +21,23 @@ If `data` is unspecified, the tensor will be filled with zeros.
 
 You can declare multi-dimensional tensors:
 ```
-var T = new astute.Tensor({
+var T = new Tensor({
   shape: [2, 2, 2],
   data: [ 1, 2, 3, 4   ,  5, 6, 7, 8,
           9 ,10,11,12  ,  13,14,15,16 ]
   });
+
+//simpler declaration with nested arrays
+var T = new Tensor([[1,2,3], 
+                    [4,5,6]]);
 ```
 
 Tensor contraction with `contract`:
 ```
-var T1 = new astute.Tensor({shape: [2,3,4]});
-var T2 = new astute.Tensor({shape:[4,3,5]});
+var T1 = new Tensor({shape: [2,3,4]});
+var T2 = new Tensor({shape:[4,3,5]});
 
-var T3 = astute.contract(T1, T2, 2);
+var T3 = astute.tensor.contract(T1, T2, 2);
 //T3 has shape [2, 5]
 
 var T4 = T1.contract(T2, 1);
@@ -40,15 +45,31 @@ var T4 = T1.contract(T2, 1);
 ```
 Matrix multiplication with `matMul` (this is just a wrapper around `contract`):
 ```
-var matrix1 = new astute.Tensor({shape: [3,4]});
-var matrix2 = new astute.Tensor({shape: [4,5]});
-var vector = new astute.Tensor({shape: [5]});
+var matrix1 = new Tensor({shape: [3,4]});
+var matrix2 = new Tensor({shape: [4,5]});
+var vector = new Tensor({shape: [5]});
 
-var mm = astute.matMul(matrix1, matrix2);
+var mm = astute.tensor.matMul(matrix1, matrix2);
 var mv = matrix2.matMul(vector);
 ```
 When possible, operations are performed using BLAS.
 
+### Sparse Vectors
+There is some support for sparse vectors (not sparse matrices or tensors though).
+```
+//create a 10000-dimensional sparse vector S with S[1] = 123  and S[34] = 23423 (S is 0-indexed).
+var S = new astute.tensor.SparseVector([[1,123], [34, 23423]], 10000);
+
+//do the same operation:
+var m = new Map();
+m.set(1, 123);
+m.set(34, 23423);
+var S = new astute.tensor.SparseVector(m, 10000);
+
+//compute a dot-product:
+var T = new astute.tensor.random.normalLike([1000], 0, 4);
+var dotProduct = S.dot(T);
+```
 ### Automatic Differentation:
 `astute.autograd` contains procedures for automatic differentation. It's modeled after Pytorch's module of the same name. Here's a bare-bones example:
 ```
@@ -75,4 +96,28 @@ for(let t=1; t<100; t++) {
   x.data = tensor.addScale(x.data, x.grad, 1.0, -eta/Math.sqrt(t));
 }
 ```
+
+#### Optimizers:
+Some handy optimizers are built in now. I'll probably add more later:
+```
+var astute = require('astute');
+
+var {tensor, autograd, optim} = astute;
+
+var eta = 1.0;
+var x = new autograd.Variable([10, 8]);
+var y = new autograd.Variable([3, -4], {requiresGrad: false});
+
+var opt = new optim.AdaGrad(eta, [x]);
+
+for(let t=1; t<100; t++) {
+  //loss = ( <x,y> - 6 )^2
+  loss = x.dot(y).sub(6).square();
+  
+  //computes gradients and takes a single optimization step:
+  opt.step(loss);
+}
+```
+You can create your own optimizers by subclassing `astute.optim.Optimizer`.
+
 
