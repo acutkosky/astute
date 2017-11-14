@@ -1,7 +1,17 @@
-# astute
+# astute 
+[![Build Status](https://travis-ci.org/acutkosky/astute.svg?branch=master)](https://travis-ci.org/acutkosky/astute)
+
 a machine learning and tensor algebra package for node
 
-This package requires BLAS to function. If you're on a mac it should be already present. Otherwise you'll need to find an installation.
+#### installing
+This package requires BLAS to function. If you're on a mac it should be already present. Otherwise you'll need to find an installation. On ubuntu you can try:
+```
+sudo apt-get install libblas-dev
+```
+This package currently uses a few es6 features, so make sure your version of node is compatible (tested on node 9). To install:
+```
+npm install astute
+```
 
 ### Tensor Algebra:
 
