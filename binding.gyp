@@ -19,7 +19,7 @@
               'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
             }
           }]
-          ],
+        ],
       "cflags": [
         "-O3"
         ],

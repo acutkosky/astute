@@ -3,9 +3,11 @@
 var tensor = require('./src/tensor');
 var autograd = require('./src/autograd');
 var autogradOps = require('./src/autogradOps');
+var optim = require('./src/optim');
 
 
 exports.tensor = tensor;
+exports.optim = optim;
 
 
 function firstArgisThis(func) {

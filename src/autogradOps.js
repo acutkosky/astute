@@ -2,7 +2,8 @@
 
 var autograd = require('./autograd');
 var tensor = require('./tensor');
-var mathops = require('./mathops');
+var mathops = tensor.mathops;
+// require('./mathops');
 
 exports.utilityFuncs = [];
 

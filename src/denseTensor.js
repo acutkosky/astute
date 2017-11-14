@@ -255,7 +255,7 @@ function onesLike(shape) {
 }
 exports.onesLike = onesLike;
 
-function fillLike(value, shape) {
+function fillLike(shape, value) {
   if(shape instanceof Tensor) {
     shape = shape.shape;
   }

@@ -33,7 +33,7 @@ for (let key in mathops) {
 //surface commonly-used functions
 exports.onesLike = denseTensor.onesLike;
 exports.zerosLike = denseTensor.zerosLike;
-exports.fillLIke = denseTensor.fillLike;
+exports.fillLike = denseTensor.fillLike;
 
 exports.random = {};
 exports.random.uniformLike = denseTensor.uniformLike;

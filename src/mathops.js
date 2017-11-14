@@ -161,6 +161,11 @@ function sameShape(tensor1, tensor2) {
 }
 exports.sameShape = sameShape;
 
+function square(source, dest) {
+  return multiplyScale(source, source, 1, dest);
+}
+exports.square = square;
+
 exportOp('exp');
 exportOp('abs');
 exportOp('sqrt');
