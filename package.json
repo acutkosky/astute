@@ -1,6 +1,6 @@
 {
   "name": "astute",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "astute.js",
   "description": "a machine learning and tensor algebra package for node",
   "scripts": {
