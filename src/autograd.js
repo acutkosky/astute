@@ -1,6 +1,6 @@
 /* jshint esversion: 6 */ 
 var tensor = require('./tensor');
-var sparseTensor = require('./sparseTensor');
+// var sparseTensor = require('./sparseTensor');
 
 class Variable {
   constructor(data, opts) {
@@ -11,7 +11,7 @@ class Variable {
     if(requiresGrad === undefined)
       requiresGrad = true;
 
-    if(!(data instanceof tensor.Tensor) && !(data instanceof sparseTensor.SparseVector))
+    if(!(data instanceof tensor.Tensor) && !(data instanceof tensor.SparseVector))
       data = new tensor.Tensor(data);
     this.data = data;
     this.grad = undefined;

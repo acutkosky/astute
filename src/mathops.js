@@ -1,6 +1,6 @@
 /* jshint esversion:6 */
 
-var tensor = require('./tensor');
+var denseTensor = require('./denseTensor');
 var sparseTensor = require('./sparseTensor');
 var nodetensor = require('../build/Release/tensorBinding');
 
@@ -17,10 +17,10 @@ function exportOp(opname, canSparse, opfunc) {
     if(source.sparse) {
       return source.apply(opfunc, dest);
     } else {
-      source = tensor.numberToTensor(source);
+      source = denseTensor.numberToTensor(source);
       if(dest === undefined)
-        dest = tensor.zerosLike(source);
-      dest = tensor.numberToTensor(dest);
+        dest = denseTensor.zerosLike(source);
+      dest = denseTensor.numberToTensor(dest);
 
       nodetensor[opname](source, dest);
 
@@ -34,14 +34,14 @@ function exportBinaryOp(opname, opfunc) {
   if(opfunc === undefined)
     opfunc = Math[opname];
   function binaryOp(source1, source2, dest) {
-    source2 = tensor.numberToTensor(source2);
+    source2 = denseTensor.numberToTensor(source2);
     if(source1.sparse) {
       return source.applyBinary(opfunc, source2, dest);
     } else {
-      source1 = tensor.numberToTensor(source1);
+      source1 = denseTensor.numberToTensor(source1);
       if(dest === undefined)
-        dest = tensor.zerosLike(tensor.broadcastShape(source1, source2));
-      dest = tensor.numberToTensor(dest);
+        dest = denseTensor.zerosLike(denseTensor.broadcastShape(source1, source2));
+      dest = denseTensor.numberToTensor(dest);
 
       nodetensor[opname](source1, source2, dest);
 
@@ -77,7 +77,7 @@ function multiplyScale(source1, source2, scale, dest) {
   } else if(source2.sparse) {
     return sparseTensor.multiplyScale(source2, source1, scale, dest);
   } else {
-    return tensor.multiplyScale(source1, source2, scale, dest);
+    return denseTensor.multiplyScale(source1, source2, scale, dest);
   }  
 }
 exports.multiplyScale = multiplyScale;
@@ -88,7 +88,7 @@ function divideScale(source1, source2, scale, dest) {
   } else if (source2.sparse) {
     throw new Error('Cannot divide by a sparse vector!');
   } else {
-    return tensor.divideScale(source1, source2, scale, dest);
+    return denseTensor.divideScale(source1, source2, scale, dest);
   }  
 }
 exports.divideScale = divideScale;
@@ -99,7 +99,7 @@ function addScale(source1, source2, scale1, scale2, dest) {
   } else if(source2.sparse) {
     return sparseTensor.addScale(source2, source1, scale2, scale1, dest);
   } else {
-    return tensor.addScale(source1, source2, scale1, scale2, dest);
+    return denseTensor.addScale(source1, source2, scale1, scale2, dest);
   }
 }
 exports.addScale = addScale;
@@ -108,7 +108,7 @@ function scale(source, scale, dest) {
   if(source.sparse) {
     return sparseTensor.scale(source, scale, dest);
   } else {
-    return tensor.scale(source, scale, dest);
+    return denseTensor.scale(source, scale, dest);
   }
 }
 exports.scale = scale;
@@ -117,7 +117,7 @@ function sum(source) {
   if(source.sparse) {
     return sparseTensor.sum(source);
   } else {
-    return tensor.sum(source);
+    return denseTensor.sum(source);
   }
 }
 exports.sum = sum;
@@ -145,7 +145,7 @@ function matMul(source1, source2, dest) {
   } else if(source2.sparse) {
     return sparseTensor.matMul(source2, source1.transpose(), dest);
   } else {
-    return tensor.contract(source1, source2, 1, dest);
+    return denseTensor.contract(source1, source2, 1, dest);
   }
 }
 exports.matMul = matMul;
