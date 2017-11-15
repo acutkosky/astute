@@ -188,5 +188,8 @@ exportOp('ceil');
 exportOp('round');
 exportOp('sign');
 
+exportBinaryOp('max');
+exportBinaryOp('min');
 exportBinaryOp('pow');
 exportBinaryOp('fmod', (x, y) => {return x - Math.trunc(x/y) * y;});
+

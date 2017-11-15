@@ -313,10 +313,13 @@ describe('Tensor', function() {
     }
 
     it('SGD should optimize', function() {
-      testOptimizer(vars => {return new optim.SGD(0.1, vars);});
+      testOptimizer(vars => {return new optim.SGD({lr: 0.1, vars: vars});});
     });
     it('AdaGrad should optimize', function() {
-      testOptimizer(vars => {return new optim.AdaGrad(1.0, vars);});
+      testOptimizer(vars => {return new optim.AdaGrad({lr: 1.0, vars: vars});});
+    });
+    it('FreeRex should optimize', function() {
+      testOptimizer(vars => {return new optim.FreeRex({vars: vars});});
     });
   });
 });

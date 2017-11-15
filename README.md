@@ -118,7 +118,7 @@ var eta = 1.0;
 var x = new autograd.Variable([10, 8]);
 var y = new autograd.Variable([3, -4], {requiresGrad: false});
 
-var opt = new optim.AdaGrad(eta, [x]);
+var opt = new optim.AdaGrad({lr: eta, var: [x]});
 
 for(let t=1; t<100; t++) {
   //loss = ( <x,y> - 6 )^2

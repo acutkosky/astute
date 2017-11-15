@@ -3,6 +3,7 @@
 #include "tensor.h"
 #include "mathops.h"
 
+
 #define CREATE_OP(func_name) void func_name(Tensor& source, Tensor& dest, TensorError* error) { \
   if(!matchedDimensions(source, dest)) { \
     *error = DimensionMismatchError; \
@@ -78,6 +79,43 @@ void abs(Tensor& source, Tensor& dest, TensorError* error) {
     dest.at(currentCoords) = sourceVal>0?sourceVal:-sourceVal;
   } while(destIterator.next());
 }
+
+void max(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+  if(!compatibleDimensions(source1, source2)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+  if(!isBroadcastDimension(source1, source2, dest)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
+  uint32_t numCoords = dest.numDimensions;
+  do {
+    uint32_t* currentCoords = destIterator.get();
+    dest.at(currentCoords) =
+      MAX(source1.broadcast_at(currentCoords, numCoords), source2.broadcast_at(currentCoords, numCoords));
+  } while(destIterator.next());
+}
+
+void min(Tensor& source1, Tensor& source2, Tensor& dest, TensorError* error) {
+  if(!compatibleDimensions(source1, source2)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+  if(!isBroadcastDimension(source1, source2, dest)) {
+    *error = DimensionMismatchError;
+    return;
+  }
+  MultiIndexIterator destIterator(dest.shape, dest.numDimensions);
+  uint32_t numCoords = dest.numDimensions;
+  do {
+    uint32_t* currentCoords = destIterator.get();
+    dest.at(currentCoords) =
+      MIN(source1.broadcast_at(currentCoords, numCoords), source2.broadcast_at(currentCoords, numCoords));
+  } while(destIterator.next());
+}
+
 
 
 CREATE_OP(exp)

@@ -4,9 +4,9 @@
 optim = require('./optimizer');
 
 class SGD extends optim.Optimizer {
-  constructor(lr, vars) {
-    super(vars);
-    this.lr = lr;
+  constructor(opts) {
+    super(opts);
+    this.lr = opts.lr;
     this.t = 0;
   }
 

@@ -3,10 +3,10 @@
 
 //base class for optimizers
 class Optimizer {
-  constructor(vars) {
-    this.vars = vars;
+  constructor(opts) {
+    this.vars = opts.vars;
     this.slots = new Map();
-    this.makeSlots(vars);
+    this.makeSlots(this.vars);
   }
 
   step(loss, vars) {

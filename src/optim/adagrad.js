@@ -7,9 +7,9 @@ tensor = require('../tensor');
 var EPSILON = 0.000001;
 
 class AdaGrad extends optim.Optimizer {
-  constructor(lr, vars) {
-    super(vars);
-    this.lr = lr;
+  constructor(opts) {
+    super(opts);
+    this.lr = opts.lr;
   }
 
   makeSlots(vars) {
