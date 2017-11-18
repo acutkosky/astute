@@ -1,13 +1,13 @@
 /* jshint esversion: 6 */
 
-var autograd = require('./autograd');
-var tensor = require('./tensor');
+var variable = require('./variable');
+var tensor = require('../tensor');
 var mathops = tensor.mathops;
-// require('./mathops');
-
 exports.utilityFuncs = [];
+var Operation = variable.Operation;
+var Variable = variable.Variable;
 
-class Add extends autograd.Operation {
+class Add extends Operation {
   forward(x, y) {
     if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
@@ -28,7 +28,7 @@ exports.add = add;
 exports.utilityFuncs.push(add);
 
 
-class Sub extends autograd.Operation {
+class Sub extends Operation {
   forward(x, y) {
     if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
@@ -54,7 +54,7 @@ function sub(x, y) {
 exports.sub = sub;
 exports.utilityFuncs.push(sub);
 
-class Mul extends autograd.Operation {
+class Mul extends Operation {
   forward(x, y) {
     if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
@@ -80,7 +80,7 @@ function mul(x, y) {
 exports.mul = mul;
 exports.utilityFuncs.push(mul);
 
-class Div extends autograd.Operation {
+class Div extends Operation {
   forward(x, y) {
     if(!mathops.sameShape(x.data, y.data))
       throw new Error("arguments must have same shape!");
@@ -108,7 +108,7 @@ function div(x, y) {
 exports.div = div;
 exports.utilityFuncs.push(div);
 
-class Scale extends autograd.Operation {
+class Scale extends Operation {
   constructor(x) {
     super();
     this.x = x;
@@ -129,7 +129,7 @@ function scale(x, v) {
 exports.scale = scale;
 exports.utilityFuncs.push(scale);
 
-class AddScalar extends autograd.Operation {
+class AddScalar extends Operation {
   constructor(x) {
     super();
     this.x = x;
@@ -150,7 +150,7 @@ function addScalar(x, v) {
 exports.addScalar = addScalar;
 exports.utilityFuncs.push(addScalar);
 
-class Dot extends autograd.Operation {
+class Dot extends Operation {
 
   forward(x, y) {
     this.saveForBackward([x.data , y.data]);
@@ -175,7 +175,7 @@ function dot(x, y) {
 exports.dot = dot;
 exports.utilityFuncs.push(dot);
 
-class Square extends autograd.Operation {
+class Square extends Operation {
 
   forward(x) {
     this.saveForBackward(x.data);
@@ -196,7 +196,7 @@ exports.square = square;
 exports.utilityFuncs.push(square);
 
 
-class Exp extends autograd.Operation {
+class Exp extends Operation {
 
   forward(x) {
     var expX = mathops.exp(x.data);
@@ -218,7 +218,7 @@ function exp(x) {
 exports.exp = exp;
 exports.utilityFuncs.push(exp);
 
-class Sqrt extends autograd.Operation {
+class Sqrt extends Operation {
 
   forward(x) {
     var sqrtX = mathops.sqrt(x.data);
@@ -239,7 +239,7 @@ function sqrt(x) {
 exports.sqrt = sqrt;
 exports.utilityFuncs.push(sqrt);
 
-class Sin extends autograd.Operation {
+class Sin extends Operation {
 
   forward(x) {
     var X = x.data;
@@ -261,7 +261,7 @@ exports.sin = sin;
 exports.utilityFuncs.push(sin);
 
 
-class Cos extends autograd.Operation {
+class Cos extends Operation {
 
   forward(x) {
     var X = x.data;
@@ -282,7 +282,7 @@ function cos(x) {
 exports.cos = cos;
 exports.utilityFuncs.push(cos);
 
-class Tan extends autograd.Operation {
+class Tan extends Operation {
 
   forward(x) {
     var tanX = mathops.tan(x.data);
@@ -311,7 +311,7 @@ function tan(x) {
 exports.tan = tan;
 exports.utilityFuncs.push(tan);
 
-class Sum extends autograd.Operation {
+class Sum extends Operation {
 
   forward(x) {
     this.saveForBackward(x.data.shape);
@@ -333,7 +333,7 @@ function sum(x) {
 exports.sum = sum;
 exports.utilityFuncs.push(sum);
 
-class Log extends autograd.Operation {
+class Log extends Operation {
 
   forward(x) {
     this.saveForBackward(x.data);

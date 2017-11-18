@@ -1,6 +1,6 @@
 /* jshint esversion: 6 */
 
-var tensorBinding = require('../build/Release/tensorBinding');
+var tensorBinding = require('../../build/Release/tensorBinding');
 var tensorUtil = require('./tensorUtil');
 
 var DimensionType = Uint32Array;

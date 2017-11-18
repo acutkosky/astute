@@ -1,5 +1,5 @@
 /* jshint esversion: 6 */ 
-var tensor = require('./tensor');
+var tensor = require('../tensor');
 
 class Variable {
   constructor(data, opts) {

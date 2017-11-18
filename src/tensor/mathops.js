@@ -2,7 +2,7 @@
 
 var denseTensor = require('./denseTensor');
 var sparseTensor = require('./sparseTensor');
-var nodetensor = require('../build/Release/tensorBinding');
+var nodetensor = require('../../build/Release/tensorBinding');
 
 var mathjs = require('mathjs');
 

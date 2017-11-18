@@ -3,9 +3,9 @@
     {
       "target_name": "tensorBinding",
       "sources": [
-        "src/tensorBinding.cc",
-        "src/tensor.cc",
-        "src/mathops.cc"
+        "csrc/tensorBinding.cc",
+        "csrc/tensor.cc",
+        "csrc/mathops.cc"
         ],
       "cflags!": [
         "-fno-exceptions"
