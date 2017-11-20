@@ -22,7 +22,7 @@ class Add extends Operation {
 exports.Add = Add;
 
 function add(x, y) {
-  return (new Add())(x,y);
+  return (new Add()).forwardWrapper(x,y);
 }
 exports.add = add;
 exports.utilityFuncs.push(add);
@@ -49,7 +49,7 @@ class Sub extends Operation {
 exports.Sub = Sub;
 
 function sub(x, y) {
-  return (new Sub())(x,y);
+  return (new Sub()).forwardWrapper(x,y);
 }
 exports.sub = sub;
 exports.utilityFuncs.push(sub);
@@ -75,7 +75,7 @@ class Mul extends Operation {
 exports.Mul = Mul;
 
 function mul(x, y) {
-  return (new Mul())(x,y);
+  return (new Mul()).forwardWrapper(x,y);
 }
 exports.mul = mul;
 exports.utilityFuncs.push(mul);
@@ -103,7 +103,7 @@ class Div extends Operation {
 exports.Div = Div;
 
 function div(x, y) {
-  return (new Div())(x,y);
+  return (new Div()).forwardWrapper(x,y);
 }
 exports.div = div;
 exports.utilityFuncs.push(div);
@@ -123,8 +123,8 @@ class Scale extends Operation {
 }
 exports.Scale = Scale;
 
-function scale(x, v) {
-  return (new Scale(x))(v);
+function scale(v, x) {
+  return (new Scale(x)).forwardWrapper(v);
 }
 exports.scale = scale;
 exports.utilityFuncs.push(scale);
@@ -145,7 +145,7 @@ class AddScalar extends Operation {
 exports.AddScalar = AddScalar;
 
 function addScalar(x, v) {
-  return (new AddScalar(x))(v);
+  return (new AddScalar(x)).forwardWrapper(v);
 }
 exports.addScalar = addScalar;
 exports.utilityFuncs.push(addScalar);
@@ -170,7 +170,7 @@ class Dot extends Operation {
 exports.Dot = Dot;
 
 function dot(x, y) {
-  return (new Dot())(x, y);
+  return (new Dot()).forwardWrapper(x, y);
 }
 exports.dot = dot;
 exports.utilityFuncs.push(dot);
@@ -190,7 +190,7 @@ class Square extends Operation {
 exports.Square = Square;
 
 function square(x) {
-  return (new Square())(x);
+  return (new Square()).forwardWrapper(x);
 }
 exports.square = square;
 exports.utilityFuncs.push(square);
@@ -213,7 +213,7 @@ class Exp extends Operation {
 exports.Exp = Exp;
 
 function exp(x) {
-  return (new Exp())(x);
+  return (new Exp()).forwardWrapper(x);
 }
 exports.exp = exp;
 exports.utilityFuncs.push(exp);
@@ -234,7 +234,7 @@ class Sqrt extends Operation {
 exports.Sqrt = Sqrt;
 
 function sqrt(x) {
-  return (new Exp())(x);
+  return (new Exp()).forwardWrapper(x);
 }
 exports.sqrt = sqrt;
 exports.utilityFuncs.push(sqrt);
@@ -255,7 +255,7 @@ class Sin extends Operation {
 exports.Sin = Sin;
 
 function sin(x) {
-  return (new Sin())(x);
+  return (new Sin()).forwardWrapper(x);
 }
 exports.sin = sin;
 exports.utilityFuncs.push(sin);
@@ -277,7 +277,7 @@ class Cos extends Operation {
 exports.Cos = Cos;
 
 function cos(x) {
-  return (new Cos())(x);
+  return (new Cos()).forwardWrapper(x);
 }
 exports.cos = cos;
 exports.utilityFuncs.push(cos);
@@ -306,7 +306,7 @@ class Tan extends Operation {
 exports.Tan = Tan;
 
 function tan(x) {
-  return (new Tan())(x);
+  return (new Tan()).forwardWrapper(x);
 }
 exports.tan = tan;
 exports.utilityFuncs.push(tan);
@@ -328,7 +328,7 @@ class Sum extends Operation {
 exports.Sum = Sum;
 
 function sum(x) {
-  return (new Sum())(x);
+  return (new Sum()).forwardWrapper(x);
 }
 exports.sum = sum;
 exports.utilityFuncs.push(sum);
@@ -348,7 +348,7 @@ class Log extends Operation {
 exports.Log = Log;
 
 function log(x) {
-  return (new Log())(x);
+  return (new Log()).forwardWrapper(x);
 }
 exports.log = log;
 exports.utilityFuncs.push(log);

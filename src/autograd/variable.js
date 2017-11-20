@@ -3,15 +3,18 @@ var tensor = require('../tensor');
 
 class Variable {
   constructor(data, opts) {
-    opts = opts || {};
+    if(opts === undefined) {
+      opts = {stopGrad: false, requiresGrad: true};
+    }
     var {stopGrad, requiresGrad} = opts;
     if(stopGrad === undefined)
       stopGrad = false;
     if(requiresGrad === undefined)
       requiresGrad = true;
 
-    if(!(data instanceof tensor.Tensor) && !(data instanceof tensor.SparseVector))
+    if(!(data instanceof tensor.Tensor) && !(data instanceof tensor.SparseVector)) {
       data = new tensor.Tensor(data);
+    }
     this.data = data;
     this.grad = undefined;
     this.parent = undefined;
@@ -56,11 +59,9 @@ class Operation {
     this.child = null;
     this.parents = [];
 
-    for(let key in this) {
-      applyOp[key] = this[key];
-    }
+    Object.assign(this, applyOp);
 
-    return applyOp;
+    // return applyOp;
   }
 
   saveForBackward(info) {

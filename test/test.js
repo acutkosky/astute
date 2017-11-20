@@ -3,7 +3,7 @@
 var assert = require('assert');
 var astute = require('../astute');
 
-var {tensor, autograd, optim} = astute;
+var {tensor, autograd, optim, linear} = astute;
 
 describe('Tensor', function() {
   describe('constructor', function() {
@@ -320,6 +320,20 @@ describe('Tensor', function() {
     });
     it('FreeRex should optimize', function() {
       testOptimizer(vars => {return new optim.FreeRex({vars: vars});});
+    });
+  });
+
+  describe('linear', function() {
+    it('should compute correct logistic regression loss', function() {
+      var weights = new tensor.Tensor({shape: [5]});
+      weights.set(0,3);
+      var feature = new tensor.SparseVector([[0,2],[3,-5]], 5);
+      var label = -1.0;
+      var example = new linear.Example(feature, label);
+
+      var loss = linear.loss.logisticLoss(example.feature.dot(weights), label);
+
+      assertSmall(loss.data.data[0] - 6.0024756851377301);
     });
   });
 });
