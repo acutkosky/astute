@@ -352,3 +352,23 @@ function log(x) {
 }
 exports.log = log;
 exports.utilityFuncs.push(log);
+
+class Abs extends Operation {
+
+  forward(x) {
+    this.saveForBackward(x.data);
+    return mathops.abs(x.data);
+  }
+
+  backward(outputDerivative, argIndex) {
+    var xdata = this.getSavedData();
+    return mathops.sign(xdata);
+  }
+}
+exports.Abs = Abs;
+
+function abs(x) {
+  return (new Abs()).forwardWrapper(x);
+}
+exports.abs = abs;
+exports.utilityFuncs.push(abs);

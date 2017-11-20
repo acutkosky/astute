@@ -89,12 +89,28 @@ class Tensor {
     var offset = this.initial_offset;
     for(let i=0; i<this.numDimensions; i++) {
       if(coords[i] >= this.shape[i] || coords[i]<0) {
-        throw new Error('coordinate out of range! coord:' + coords[i] + ' dimension: ' + this.shape[i]);
+        throw new Error('coordinate out of range! coord:' + coords + ' shape: ' + this.shape);
       }
       offset += coords[i] * this.strides[i];
     }
     return this.data[offset];
   }
+
+  broadcastAt(coords) {
+    if(!(coords instanceof Array))
+      coords = [...arguments];
+    var offset = this.initial_offset;
+    for(let i=0; i<this.numDimensions; i++) {
+      let coord = coords[i];
+      if((coord >= this.shape[i] && this.shape[i]!=1) || coord<0) {
+        throw new Error('coordinate out of range! coord:' + coords + ' shape: ' + this.shape);
+      }
+      coord = Math.min(coord, this.shape[i]-1);
+      offset += coord * this.strides[i];
+    }
+    return this.data[offset];
+  }
+
 
   set(coords, value) {
     if(!(coords instanceof Array))
@@ -102,7 +118,7 @@ class Tensor {
     var offset = this.initial_offset;
     for(let i=0; i<this.numDimensions; i++) {
       if(coords[i] >= this.shape[i] || coords[i]<0) {
-        throw new Error('coordinate out of range! coord:' + coords[i] + ' dimension: ' + this.shape[i]);
+        throw new Error('coordinate out of range! coord:' + coords + ' shape: ' + this.shape);
       }
       offset += coords[i] * this.strides[i];
     }

@@ -79,7 +79,7 @@ class Operation {
         arg = new Variable(arg);
         arguments[i] = arg;
       }
-      arg.children.push(this);
+      // arg.children.push(this);
       this.parents.push(arg);
     }
     var output = this.forward(...arguments);

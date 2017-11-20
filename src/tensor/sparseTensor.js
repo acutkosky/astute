@@ -37,6 +37,12 @@ class SparseVector {
     return this.data.get(coord) || 0;
   }
 
+  broadcastAt(coord) {
+    if(coord instanceof Array)
+      coord = coord[0];
+    return this.data.get(coord) || 0;
+  }
+
   set(coord, value) {
     if(coord instanceof Array)
       coord = coord[0];
@@ -73,19 +79,31 @@ class SparseVector {
   apply(func, dest) {
     if(dest === undefined) {
       dest = this.clone();
+      return dest.applyInPlace(func);
     } else {
-      dest.copyFrom(this);
+      for(let [key, value] of this.data) {
+        dest.set([key], func(value));
+      }
+      return dest;
     }
-    return dest.applyInPlace(func);
+  }
+
+  copyTo(dest) {
+    for(let [key, value] of this.data) {
+      dest.set([key], value);
+    }
   }
 
   applyBinary(func, other, dest) {
     if(dest === undefined) {
       dest = this.clone();
+      return dest.applyBinaryInPlace(func, other);
     } else {
-      dest.copyFrom(this);
+      for(let [key, value] of this.data) {
+        dest.set([key], func(value, other.at([key])));
+      }
+      return dest;
     }
-    return dest.applyBinaryInPlace(func, other);
   }
 
   applyBinaryInPlace(func, other) {
@@ -119,7 +137,7 @@ function multiplyScale(sparse, dense, scaleFactor, dest) {
     dest.setLength(sparse.length);
   }
   for(let [key, value] of sparse.data) {
-    dest.set(key, scaleFactor * value * dense.at(key));
+    dest.set(key, scaleFactor * value * dense.broadcastAt(key));
   }
   return dest;
 }
@@ -154,7 +172,7 @@ function addScaleSparseDense(sparse, dense, scale1, scale2, dest) {
   }
   denseTensor.scale(dense, scale2, dest);
   for(let [key, value] of sparse.data) {
-    dest.set(key, scale1 * value +  dest.at(key));
+    dest.set(key, scale1 * value +  dense.broadcastAt(key));
   }
   return dest;
 }
@@ -166,7 +184,7 @@ function divideScale(sparse, dense, scale, dest) {
     dest.setLength(sparse.length);
   }
   for(let [key, value] of sparse.data) {
-    dest.set(key, scale * value / dense.at(key));
+    dest.set(key, scale * value / dense.broadcastAt(key));
   }
   return dest;
 }
@@ -193,7 +211,7 @@ function sum(sparse) {
 }
 exports.sum = sum;
 
-function dot(sparse, other) {
+function dot(sparse, other, dest) {
   if(!sparse.sparse) {
     throw new Error('Attempted to use sparse dot product with non-sparse argument!');
   }
@@ -201,7 +219,12 @@ function dot(sparse, other) {
   for(let [key, value] of sparse.data) {
     product += value * other.at(key);
   }
-  return product;
+  if(dest === undefined) {
+    dest = new denseTensor.Tensor([product]);
+  } else {
+    dest.set([0], product);
+  }
+  return dest;
 }
 exports.dot = dot;
 

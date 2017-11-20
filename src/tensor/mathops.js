@@ -9,6 +9,8 @@ var mathjs = require('mathjs');
 function exportOp(opname, canSparse, opfunc) {
   if(opfunc === undefined)
     opfunc = Math[opname];
+  // if(canSparse === undefined)
+  //   canSparse = true;
 
   function op(source, dest) {
     if(source.sparse && !canSparse) {
@@ -30,13 +32,31 @@ function exportOp(opname, canSparse, opfunc) {
   exports[opname] = op;
 }
 
-function exportBinaryOp(opname, opfunc) {
+function exportBinaryOp(opname, canSparse, commutative, opfunc) {
   if(opfunc === undefined)
     opfunc = Math[opname];
+  if(canSparse === undefined)
+    canSparse = true;
+
   function binaryOp(source1, source2, dest) {
-    source2 = denseTensor.numberToTensor(source2);
+    if(!isNaN(source2)) {
+      source2 = denseTensor.numberToTensor(source2);
+    }
+    if(source1.sparse && !canSparse) {
+      source1 = source1.toDense();
+    }
+    if(source2.sparse && !canSparse) {
+      source2 = source2.toDense();
+    }
+    if(commutative) {
+      if(source2.sparse && !source1.sparse) {
+        let temp = source2;
+        source2 = source1;
+        source1 = temp;
+      }
+    }
     if(source1.sparse) {
-      return source.applyBinary(opfunc, source2, dest);
+      return source1.applyBinary(opfunc, source2, dest);
     } else {
       source1 = denseTensor.numberToTensor(source1);
       if(dest === undefined)
@@ -124,15 +144,15 @@ exports.sum = sum;
 
 function dot(source1, source2, dest) {
   if(source2.sparse) {
-    let dp = sparseTensor.dot(source2, source1);
-    if(dest !== undefined)
-      dest.set(0, dp);
+    let dp = sparseTensor.dot(source2, source1, dest);
+    // if(dest !== undefined)
+    //   dest.set(0, dp);
     return dp;
   }
   if(source1.sparse) {
-    let dp = sparseTensor.dot(source1, source2);
-    if(dest !== undefined)
-      dest.set(0, dp);
+    let dp = sparseTensor.dot(source1, source2, dest);
+    // if(dest !== undefined)
+    //   dest.set(0, dp);
     return dp;
   }
   return matMul(source1, source2, dest);
@@ -167,7 +187,7 @@ function square(source, dest) {
 exports.square = square;
 
 exportOp('exp');
-exportOp('abs');
+exportOp('abs', true);
 exportOp('sqrt');
 exportOp('sin');
 exportOp('cos');
@@ -175,21 +195,21 @@ exportOp('tan');
 exportOp('sinh');
 exportOp('cosh');
 exportOp('tanh');
-exportOp('log');
+exportOp('log', false);
 exportOp('atan');
 exportOp('acos');
 exportOp('asin');
 exportOp('atanh');
 exportOp('acosh');
 exportOp('asinh');
-exportOp('erf', mathjs.erf);
+exportOp('erf', true, mathjs.erf);
 exportOp('floor');
 exportOp('ceil');
-exportOp('round');
-exportOp('sign');
+exportOp('round', true);
+exportOp('sign', true);
 
-exportBinaryOp('max');
-exportBinaryOp('min');
+exportBinaryOp('max', true, true);
+exportBinaryOp('min', true, true);
 exportBinaryOp('pow');
 exportBinaryOp('fmod', (x, y) => {return x - Math.trunc(x/y) * y;});
 
