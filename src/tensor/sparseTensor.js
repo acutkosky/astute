@@ -167,10 +167,11 @@ function addScaleSparseSparse(sparse1, sparse2, scale1, scale2, dest) {
 }
 
 function addScaleSparseDense(sparse, dense, scale1, scale2, dest) {
+  dense = denseTensor.numberToTensor(dense);
   if(dest === undefined) {
-    dest = new denseTensor.Tensor({shape: dense.shape});
+    dest = new denseTensor.Tensor({shape: sparse.shape});
   }
-  denseTensor.scale(dense, scale2, dest);
+  denseTensor.addScale(dest, dense, 1, scale2, dest);
   for(let [key, value] of sparse.data) {
     dest.set(key, scale1 * value +  dense.broadcastAt(key));
   }
