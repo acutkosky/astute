@@ -27,9 +27,9 @@ function assertSmall(value) {
 
 describe('Linear Learning', function() {
   it('should compute correct logistic regression loss', function() {
-    var weights = new tensor.Tensor({shape: [5]});
+    var weights = new tensor.Tensor({shape: [1000]});
     weights.set(0,3);
-    var feature = new tensor.SparseVector([[0,2],[3,-5]], 5);
+    var feature = new tensor.SparseVector([[0,2],[3,-5]], 1000);
     var label = -1.0;
     var example = new linear.Example(feature, label);
 
