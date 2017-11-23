@@ -36,21 +36,20 @@ describe('AutoGrad', function() {
       perturbedTensors.push(tensor.mathops.addScale(noise, T, 1, 1));
 
     }
-    var result = opFunc(...baseVariables).sum();
-    var perturbedResult = opFunc(...perturbedTensors).sum();
+    var result = opFunc(...baseVariables).sum().scale(2);
+    var perturbedResult = opFunc(...perturbedTensors).sum().scale(2);
     result.zeroGrad();
     result.backward();
     var diff = tensor.mathops.addScale(perturbedResult.data, result.data, 1, -1);
-
     var norm = new tensor.Tensor([0]);
     var directionalGrad = new tensor.Tensor([0]);
     for(let i=0; i<baseVariables.length; i++) {
       var currentNormSq = tensor.mathops.multiplyScale(noiseTensors[i], noiseTensors[i], 1).sum();
       tensor.mathops.addScale(norm, currentNormSq, 1, 1, norm);
-      norm = norm.sqrt();
       var currentDotProduct = tensor.mathops.multiplyScale(noiseTensors[i], baseVariables[i].grad, 1).sum();
       tensor.mathops.addScale(directionalGrad, currentDotProduct, 1, 1, directionalGrad);
     }
+    norm = norm.sqrt();
     tensor.mathops.divideScale(directionalGrad, norm, 1, directionalGrad);
     var numDirectionalGrad = tensor.mathops.divideScale(diff, norm, 1);
     var error = tensor.mathops.addScale(numDirectionalGrad, directionalGrad, 1, -1);
@@ -97,6 +96,7 @@ describe('AutoGrad', function() {
   describe('autograd', function() {
 
     var unaryFuncs = [
+    'abs',
     'square',
     'exp',
     'sqrt',
@@ -111,7 +111,7 @@ describe('AutoGrad', function() {
     }
 
     for(let i=0; i<unaryFuncs.length; i++) {
-      if(unaryFuncs[i] != 'log')
+      if(unaryFuncs[i] != 'log' && unaryFuncs[i] != 'abs')
         testFunction(unaryFuncs[i], [[3]], true);
     }
 

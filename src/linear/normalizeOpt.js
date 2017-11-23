@@ -31,7 +31,7 @@ class NormalizedOptimizer {
   update(lossFunc, example) {
     updateScalings(this.scalings, example.feature);
 
-    loss = lossFunc(this.weights.dot(example.feature.div(this.scalings)), example.label);
+    var loss = lossFunc(this.weights.dot(example.feature.div(this.scalings)), example.label);
     this.optimizer.step(loss);
 
     this.iterations++;

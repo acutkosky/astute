@@ -342,7 +342,7 @@ class Log extends Operation {
 
   backward(outputDerivative, argIndex) {
     var xdata = this.getSavedData();
-    return mathops.divideScale(1, xdata, 1);
+    return mathops.divideScale(outputDerivative, xdata, 1);
   }
 }
 exports.Log = Log;
@@ -362,7 +362,7 @@ class Abs extends Operation {
 
   backward(outputDerivative, argIndex) {
     var xdata = this.getSavedData();
-    return mathops.sign(xdata);
+    return mathops.sign(xdata).mul(outputDerivative);
   }
 }
 exports.Abs = Abs;
@@ -372,3 +372,4 @@ function abs(x) {
 }
 exports.abs = abs;
 exports.utilityFuncs.push(abs);
+

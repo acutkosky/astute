@@ -34,7 +34,6 @@ describe('Linear Learning', function() {
     var example = new linear.Example(feature, label);
 
     var loss = linear.loss.logisticLoss(example.feature.dot(weights), label);
-
     assertSmall(loss.data.data[0] - 6.0024756851377301);
   });
 
